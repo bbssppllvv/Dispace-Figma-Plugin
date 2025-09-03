@@ -1,0 +1,1059 @@
+@keyframes thumbShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+.thumb-skeleton {
+  border-radius: 6px;
+}
+
+/* Disabled thumbnail overlay (reuses skeleton element as a static mask) */
+.preset-item[data-disabled="1"] .thumb-skeleton {
+  opacity: 1 !important;
+  background-image: none !important;
+  background-color: var(--color-disabled-bg) !important;
+}
+
+.preset-item[data-disabled="1"] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Tailwind directives are not processed in this CSS context; removed to avoid linter warnings */
+
+/* =================================
+   FIGMA DESIGN SYSTEM
+   ================================= */
+
+:root {
+  /* Colors - Monochrome Design System */
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-preview: #fbfbfb;
+  --color-text: #000000;
+  --color-text-secondary: #6c757d;
+  --color-border: #e5e5e5;
+  --color-border-strong: #cccccc;
+  
+  --color-button-primary: #000000;
+  --color-button-primary-hover: #333333;
+  --color-button-primary-text: #ffffff;
+  
+  --color-button-secondary: #ffffff;
+  --color-button-secondary-hover: #f5f5f5;
+  --color-button-secondary-text: #000000;
+  
+  --color-disabled: #b3b3b3;
+  --color-disabled-bg: #f8f8f8;
+  --color-selected: #f0f0f0;
+  
+  /* Danger colors */
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  
+  /* Typography Scale - Ultra Minimal */
+  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  
+  /* Font Sizes - 6 размеров */
+  --font-size-xxs: 8px;     /* Ultra small - PRO badges, очень мелкие элементы */
+  --font-size-xs: 10px;      /* Badges (жирные), мелкие заметки */
+  --font-size-sm: 11px;      /* Кнопки, табы, лейблы слайдеров, заголовки групп */  
+  --font-size-base: 13px;    /* Основной текст */
+  --font-size-md: 14px;      /* Подзаголовки, навигация */
+  --font-size-lg: 18px;      /* Заголовки модалок */
+  --font-size-xl: 20px;      /* H1 for empty state (display) */
+  
+  /* Line Height - 1 вариант для всего */
+  --line-height: 1.4;        /* Универсальная высота строки */
+  
+  /* Font Weights - 2 основных + 1 для больших заголовков */
+  --font-weight-normal: 400;   /* Обычный текст */
+  --font-weight-medium: 500;   /* Акценты, кнопки, активные элементы */
+  --font-weight-bold: 600;     /* Только для больших заголовков */
+  
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.03em;  /* -3% для больших заголовков */
+  --letter-spacing-xtra-tight: -0.04em; /* -4% для H1 в пустом состоянии */
+  
+  /* Spacing & Layout */
+  --space-small: 8px;
+  --space-medium: 12px;
+  --radius-medium: 4px;
+  
+  /* Slider */
+  --slider-track: var(--color-border);
+  --slider-fill: var(--color-text);
+  --slider-thumb: var(--color-bg);
+
+  /* Overlays & HUD */
+  --overlay-bg: rgba(0, 0, 0, 0.8);
+  --color-hud-text: #ffffff;
+
+  /* Dropdown tokens */
+  --dropdown-hover-bg: rgba(255, 255, 255, 0.08);
+  --dropdown-separator: rgba(255, 255, 255, 0.2);
+  --btn-split-divider: rgba(255, 255, 255, 0.2);
+
+  /* Badges */
+  --badge-pro-bg: #ffffff;
+  --badge-pro-fg: #000000;
+
+  /* Slider tokens */
+  --slider-thickness: 4px;
+  --slider-thumb-size: 12px;
+  --slider-padding-y: 6px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #2c2c2c;
+    --color-bg-secondary: #383838;
+    --color-bg-preview: #252525;
+    --color-text: #ffffff;
+    --color-text-secondary: #b3b3b3;
+    --color-border: #444444;
+    --color-border-strong: #666666;
+    
+    --color-button-primary: #ffffff;
+    --color-button-primary-hover: #cccccc;
+    --color-button-primary-text: #000000;
+    
+    --color-button-secondary: #383838;
+    --color-button-secondary-hover: #404040;
+    --color-button-secondary-text: #ffffff;
+    
+    --color-disabled: #666666;
+    --color-disabled-bg: #333333;
+    --color-selected: #404040;
+    
+    /* Slider variables for dark theme */
+    --slider-track: var(--color-border);
+    --slider-fill: var(--color-text);
+    --slider-thumb: var(--color-bg);
+
+    /* Overlays & HUD */
+    --color-hud-text: #ffffff;
+
+    /* Dropdown tokens (invert for light menu background) */
+    --dropdown-hover-bg: rgba(0, 0, 0, 0.06);
+    --dropdown-separator: rgba(0, 0, 0, 0.1);
+    --btn-split-divider: rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* =================================
+   BASE STYLES
+   ================================= */
+
+body { 
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =================================
+   TYPOGRAPHY CLASSES
+   ================================= */
+
+/* Размеры шрифтов */
+.text-xs {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height);
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height);
+}
+
+.text-base {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+}
+
+.text-md {
+  font-size: var(--font-size-md);
+  line-height: var(--line-height);
+}
+
+.text-lg {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height);
+}
+
+/* Веса шрифтов */
+.font-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+/* Семейства шрифтов */
+.font-mono {
+  font-family: var(--font-family-mono);
+}
+
+/* Цвета текста */
+.text-primary {
+  color: var(--color-text);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-muted {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+/* Text utilities */
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-nowrap {
+  white-space: nowrap;
+}
+
+.text-break {
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+.text-lowercase {
+  text-transform: lowercase;
+}
+
+.text-capitalize {
+  text-transform: capitalize;
+}
+
+/* Семантические классы */
+.text-heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+/* H1 for empty state */
+.text-h1 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height);
+  letter-spacing: var(--letter-spacing-xtra-tight);
+  max-width: 250px;
+  text-align: center;
+  margin: 0 auto;
+  word-break: break-word;
+}
+
+.text-subheading {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height);
+}
+
+.text-subtitle {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height);
+  color: var(--color-text-secondary);
+}
+
+.text-body {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height);
+}
+
+.text-caption {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height);
+}
+
+.text-badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height);
+}
+
+.text-code {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height);
+}
+
+.text-code-inline {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height);
+}
+
+/* UI Utility Classes */
+.bg-ui-bg {
+  background-color: var(--color-bg);
+}
+
+.bg-ui-bg-secondary {
+  background-color: var(--color-bg-secondary);
+}
+
+.bg-ui-bg-preview {
+  background-color: var(--color-bg-preview);
+}
+
+/* Critical Spacing Classes */
+.space-x-1 > * + * {
+  margin-left: 0.25rem; /* 4px */
+}
+
+.space-x-2 > * + * {
+  margin-left: 0.5rem; /* 8px */
+}
+
+.space-y-2 > * + * {
+  margin-top: 0.5rem; /* 8px */
+}
+
+.space-y-4 > * + * {
+  margin-top: 0.75rem; /* 12px - reduced from 16px for compactness */
+}
+
+/* Layout Classes */
+.w-\[70px\] {
+  width: 70px;
+}
+
+.w-\[320px\] {
+  width: 320px;
+}
+
+.w-\[400px\] {
+  width: 400px;
+}
+
+.h-\[400px\] {
+  height: 400px;
+}
+
+.p-4 {
+  padding: 0.75rem; /* 12px - reduced from 16px for compactness */
+}
+
+.pt-4 {
+  padding-top: 0.75rem; /* 12px - reduced from 16px for compactness */
+}
+
+.pb-2 {
+  padding-bottom: 0.5rem; /* 8px */
+}
+
+.mb-4 {
+  margin-bottom: 0.75rem; /* 12px - reduced from 16px for compactness */
+}
+
+.mt-auto {
+  margin-top: auto;
+}
+
+/* Flex utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+/* Display utilities */
+.block {
+  display: block;
+}
+
+/* Pointer-events utilities (for overlays/HUD) */
+.pe-none { pointer-events: none; }
+.pe-auto { pointer-events: auto; }
+
+/* Common size utility for icon buttons */
+.size-32 { width: 32px; height: 32px; min-width: 32px; }
+
+/* Size utilities */
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+/* Overflow utilities */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+}
+
+/* Position utilities */
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* Z-index */
+.z-10 {
+  z-index: 10;
+}
+
+/* Hover overlay utilities */
+.hover-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-text);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.hover-overlay:hover::before {
+  opacity: 0.15;
+}
+
+.hover-overlay-strong:hover::before {
+  opacity: 0.25;
+}
+
+/* Subtle focus for accessibility */
+button:focus-visible,
+.slider:focus-visible {
+  outline: 1px solid var(--color-text);
+  outline-offset: 1px;
+}
+
+/* Remove outline for mouse interactions */
+button:focus:not(:focus-visible),
+.slider:focus:not(:focus-visible),
+.slider:focus {
+  outline: none;
+}
+
+/* Hide scrollbars for preset container */
+#presetGridContainer::-webkit-scrollbar {
+  display: none;
+}
+
+#presetGridContainer {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Keep thin scrollbars for other elements */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-text-secondary);
+  border-radius: 2px;
+}
+
+/* =================================
+   COMPONENTS
+   ================================= */
+
+/* Sliders */
+.slider {
+  position: relative;
+  width: 100%;
+  height: var(--slider-thickness);
+  /* Reduce vertical padding for compactness while keeping clickability */
+  padding: var(--slider-padding-y) 0;
+  /* Remove background to avoid duplication with pseudo-element */
+  background-color: transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Create a pseudo-element for the actual visual track */
+.slider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: var(--slider-thickness);
+  background-color: var(--slider-track);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.slider .track-fill {
+  position: absolute;
+  top: 50%;
+  height: var(--slider-thickness);
+  background-color: var(--slider-fill);
+  border-radius: inherit;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.slider .thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  background-color: var(--slider-thumb);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  border: 1px solid var(--color-border-strong);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-small) var(--space-medium);
+  border-radius: var(--radius-medium);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  outline: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background-color: var(--color-button-primary);
+  color: var(--color-button-primary-text);
+  border-color: var(--color-button-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-button-primary-hover);
+  border-color: var(--color-button-primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--color-button-secondary);
+  color: var(--color-button-secondary-text);
+  border-color: var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-button-secondary-hover);
+}
+
+.btn:disabled {
+  background-color: var(--color-disabled-bg);
+  color: var(--color-disabled);
+  cursor: not-allowed;
+  border-color: var(--color-border);
+  opacity: 0.6;
+}
+
+/* Split button (primary) */
+.btn-split {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0;
+}
+.btn-split-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.btn-split-chevron {
+  padding-left: 8px;
+  padding-right: 8px;
+  border-left: 1px solid var(--btn-split-divider);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.btn-split .btn:disabled + .btn {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Dropdown for split button */
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  background: var(--color-text);
+  color: var(--color-button-primary-text);
+  border-radius: 6px;
+  min-width: 220px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  padding: 6px 0;
+  z-index: 1000;
+}
+.dropdown-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dropdown-item:hover { 
+  background: var(--dropdown-hover-bg);
+}
+.dropdown-item .check {
+  opacity: 0;
+  font-size: 12px;
+}
+.dropdown-item.selected .check {
+  opacity: 1;
+}
+.dropdown-separator {
+  height: 1px;
+  background: var(--dropdown-separator);
+  margin: 4px 0;
+}
+
+/* Tabs */
+.tab-button {
+  padding: var(--space-small) var(--space-medium);
+  border-radius: var(--radius-medium);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.tab-button:hover:not(.active) {
+  background-color: var(--color-button-secondary-hover);
+  color: var(--color-text);
+}
+
+.tab-button.active {
+  background-color: var(--color-selected);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Labels */
+label {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height);
+  color: var(--color-text-secondary);
+}
+
+/* Labels with tooltips get hover effect */
+label[data-tooltip] {
+  cursor: help;
+  transition: color 0.15s ease;
+}
+
+label[data-tooltip]:hover {
+  color: var(--color-text);
+}
+
+/* Loading overlay */
+#loadingOverlay .message {
+  color: var(--color-text-secondary);
+  max-width: 280px;
+  text-align: center;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height);
+  font-weight: var(--font-weight-normal);
+}
+
+/* Disabled state */
+#controls-container.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Horizontal preset container */
+.preset-horizontal-container {
+  display: flex;
+  gap: 16px;
+  min-width: max-content;
+}
+
+/* Preset scroll navigation */
+.preset-gallery-wrapper {
+  position: relative;
+}
+
+/* Navigation arrows */
+.preset-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: opacity 0.2s ease;
+  color: var(--color-text);
+}
+
+/* При hover на wrapper - легкий hover эффект стрелок */
+.preset-gallery-wrapper:hover .preset-nav-arrow {
+  background-color: var(--color-button-secondary-hover);
+}
+
+/* При hover на конкретную стрелку - более яркий эффект */
+.preset-nav-arrow:hover {
+  background-color: var(--color-selected) !important;
+}
+
+.preset-nav-left {
+  left: 4px;
+}
+
+.preset-nav-right {
+  right: 4px;
+}
+
+/* Disabled state for arrows */
+.preset-nav-arrow[style*="opacity: 0"] {
+  pointer-events: none;
+}
+
+/* Category groups */
+.preset-category-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: max-content;
+}
+
+/* Category headers - use same style as labels */
+.category-header {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height);
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+/* Preset grid - 3 rows, flow horizontally */
+.preset-category-grid {
+  display: grid;
+  grid-template-rows: repeat(2, 1fr); /* 2 строки: больше плитки, та же суммарная высота */
+  grid-auto-flow: column;
+  gap: 4px;
+  width: max-content;
+  padding: 2px 8px 8px 8px; /* Уменьшенный отступ сверху, отступы по бокам и снизу для кнопок удаления */
+  position: relative; /* Создаем stacking context */
+}
+
+/* Preset items - more compact */
+.preset-item {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-medium);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  position: relative;
+  background-color: var(--color-bg-secondary);
+}
+
+/* PRO badge for premium presets */
+.preset-pro-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: var(--badge-pro-bg);
+  color: var(--badge-pro-fg);
+  font-family: var(--font-family);
+  font-size: var(--font-size-xxs);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height);
+  padding: 2px 4px;
+  border-radius: 2px;
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Custom preset items - без overflow hidden для кнопки удаления */
+.preset-item.custom-preset {
+  overflow: visible;
+}
+
+/* Обеспечиваем правильное скругление изображений во всех типах пресетов */
+.preset-item img,
+.preset-item.custom-preset img {
+  border-radius: var(--radius-medium);
+}
+
+/* Selection ring - match preset border-radius */
+.selection-ring {
+  border-radius: var(--radius-medium);
+}
+
+/* Анимированное появление ring через изменение толщины stroke */
+.selection-ring.ring-transparent {
+  box-shadow: inset 0 0 0 0px var(--color-text);
+}
+
+.selection-ring.ring-black {
+  box-shadow: inset 0 0 0 2px var(--color-text);
+}
+
+/* Убираем стандартные ring стили когда используем кастомные */
+.selection-ring.ring-transparent.ring-2,
+.selection-ring.ring-black.ring-2 {
+  --tw-ring-width: 0px;
+}
+
+/* Кастомные пресеты при hover должны быть еще выше для кнопки удаления */
+.preset-item.custom-preset:hover {
+  z-index: 200;
+}
+
+/* Custom preset delete button */
+.preset-item .delete-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--color-button-primary);
+  color: var(--color-button-primary-text);
+  border: 1px solid var(--color-bg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 1000; /* Еще выше чем любой preset */
+}
+
+.preset-item:hover .delete-btn {
+  opacity: 1;
+  transform: translate(50%, -50%) scale(1.1);
+  z-index: 1000; /* Сохраняем максимальный z-index */
+}
+
+.preset-item .delete-btn:hover {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  z-index: 1001; /* При hover на саму кнопку - самый высокий приоритет */
+} 
+
+/* Tooltip */
+.tooltip {
+  position: fixed;
+  background-color: var(--color-text);
+  color: var(--color-bg);
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height);
+  max-width: 200px;
+  word-wrap: break-word;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tooltip.tooltip-below {
+  transform: translateY(-2px);
+}
+
+.tooltip.tooltip-below.tooltip-visible {
+  transform: translateY(0);
+} 
+
+/* =================================
+   MODAL STYLES
+   ================================= */
+
+/* Hidden state for modals */
+.hidden {
+  display: none !important;
+}
+
+/* Modal styles */
+.paywall-modal,
+.copycode-modal,
+.copycode-modal-free {
+  display: flex;
+}
+
+/* Generic full-screen overlay */
+.overlay-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay-bg);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family);
+}
+
+/* Modal shell that fills screen with split layout */
+.modal-shell {
+  background: var(--color-bg);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+
+.modal-panel-left {
+  flex: 0.8;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border);
+}
+
+.modal-panel-right {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-preview);
+  position: relative;
+}
+
+/* HUD overlay message */
+.hud-message {
+  color: var(--color-hud-text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.paywall-modal.hidden,
+.copycode-modal.hidden,
+.copycode-modal-free.hidden {
+  display: none !important;
+} 
+
+/* Ensure live preview scales with nearest-neighbor to match final render */
+#preview,
+#preview svg {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}

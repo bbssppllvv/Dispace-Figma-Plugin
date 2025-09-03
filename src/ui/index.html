@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Displacement 2.0</title>
+  
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="main.css">
+</head>
+<body>
+  <div id="root">
+    <div class="flex h-full w-full overflow-hidden">
+      <!-- Left side - Preview -->
+      <section class="w-[400px] h-[400px] bg-ui-bg-preview relative flex-shrink-0" aria-label="Effect preview">
+        <!-- The container for the SVG engine, will be populated by engine.ts -->
+        <div id="preview" class="absolute inset-0" role="img" aria-label="Preview of displacement effect"></div>
+        
+        <!-- The overlay for notifications, now a sibling to the preview container -->
+        <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center z-10 pe-none" aria-live="polite">
+          <div class="message pe-auto" role="status"></div>
+        </div>
+        
+        <!-- Lightweight HUD overlay for transient messages (values, preset names) -->
+        <div id="hudOverlay" class="absolute inset-0 flex items-center justify-center z-10" aria-live="polite" aria-atomic="true" style="pointer-events: none; display: none;">
+          <div id="hudMessage" class="text-body hud-message" role="status"></div>
+        </div>
+      </section>
+      
+      <!-- Right side - Controls -->
+      <main id="controls-container" class="w-[320px] p-4 overflow-y-auto bg-ui-bg-secondary flex flex-col" role="main">
+        <div class="flex-grow">
+          
+          <!-- Preset gallery with horizontal scroll -->
+          <div class="preset-gallery-wrapper relative mb-4">
+            <section id="presetGridContainer" class="overflow-x-auto pb-2" aria-label="Effect presets">
+              <div class="preset-horizontal-container" id="presetGrid" role="group" aria-label="Preset gallery">
+                <!-- Categories will be rendered here horizontally -->
+              </div>
+            </section>
+          </div>
+          
+          <!-- Tabs -->
+          <section class="mb-4" aria-label="Effect controls">
+            <div class="flex space-x-1" id="controls-tab-list" role="tablist" aria-label="Control categories">
+                <button class="tab-button" role="tab" aria-controls="main-controls" aria-selected="false" data-target="main-controls" tabindex="0">Displace</button>
+                <button class="tab-button" role="tab" aria-controls="adjust-controls" aria-selected="false" data-target="adjust-controls" tabindex="-1">Effects</button>
+                <button class="tab-button" role="tab" aria-controls="grain-controls" aria-selected="false" data-target="grain-controls" tabindex="-1">Grain</button>
+                <button class="tab-button" role="tab" aria-controls="reflect-controls" aria-selected="false" data-target="reflect-controls" tabindex="-1">Reflect</button>
+            </div>
+          </section>
+
+          <!-- Tab Content -->
+          <div id="controls-tab-content">
+            <!-- Main Controls -->
+            <div id="main-controls" class="tab-content hidden space-y-4" role="tabpanel" aria-labelledby="main-controls-tab" tabindex="0">
+              <!-- Strength -->
+              <div class="flex items-center space-x-2">
+                <label for="strength" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Controls how intense the displacement effect is. Negative values create inverted displacement.">Strength</label>
+                <div id="strength" class="slider bipolar-slider" role="slider" aria-label="Displacement strength" aria-valuemin="-400" aria-valuemax="400" aria-valuenow="0" data-min="-400" data-max="400" data-snap-threshold="20" tabindex="0"></div>
+              </div>
+              
+              <!-- Scale -->
+              <div class="flex items-center space-x-2">
+                <label for="scale" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Size of displacement patterns. Higher values create larger, smoother distortions.">Scale</label>
+                <div id="scale" class="slider" role="slider" aria-label="Displacement scale" aria-valuemin="2" aria-valuemax="150" aria-valuenow="20" data-min="2" data-max="150" tabindex="0"></div>
+              </div>
+              
+              <!-- Soft -->
+              <div class="flex items-center space-x-2">
+                <label for="soft" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Blends displacement edges smoothly. Higher values create more gradual transitions.">Soft</label>
+                <div id="soft" class="slider" role="slider" aria-label="Displacement softness" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" data-min="0" data-max="10" data-step="0.1" tabindex="0"></div>
+              </div>
+            </div>
+            
+            <!-- Adjust Controls -->
+            <div id="adjust-controls" class="tab-content hidden space-y-4" role="tabpanel" aria-labelledby="adjust-controls-tab" tabindex="0">
+              
+              <div class="flex items-center space-x-2">
+                <label for="chromatic" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Separates color channels for a lens distortion effect. Creates red/blue fringing.">Chromatic</label>
+                <div id="chromatic" class="slider" role="slider" aria-label="Chromatic aberration" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-min="0" data-max="100" data-step="0.1" tabindex="0"></div>
+              </div>
+              
+              <!-- Blur -->
+              <div class="flex items-center space-x-2">
+                <label for="blur" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Adds motion blur to the displacement. Higher values create smoother, softer effects.">Blur</label>
+                <div id="blur" class="slider" role="slider" aria-label="Blur amount" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0" data-min="0" data-max="20" data-step="0.1" tabindex="0"></div>
+              </div>
+
+              <!-- Dissolve -->
+              <div class="flex items-center space-x-2">
+                <label for="noise" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Breaks up the image with noise texture. Creates a scattered, dissolving effect.">Dissolve</label>
+                <div id="noise" class="slider" role="slider" aria-label="Dissolve strength" aria-valuemin="0" aria-valuemax="200" aria-valuenow="0" data-min="0" data-max="200" tabindex="0"></div>
+              </div>
+            </div>
+
+            <!-- Grain Controls -->
+            <div id="grain-controls" class="tab-content hidden" role="tabpanel" aria-labelledby="grain-controls-tab" tabindex="0">
+              <p class="text-xs text-secondary">Grain controls are not yet available.</p>
+            </div>
+            
+            <!-- Reflect Controls -->
+            <div id="reflect-controls" class="tab-content hidden space-y-4" role="tabpanel" aria-labelledby="reflect-controls-tab" tabindex="0">
+              <!-- Opacity -->
+              <div class="flex items-center space-x-2">
+                <label for="reflect-opacity" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Controls the transparency of the reflection effect. Higher values make reflections more visible.">Opacity</label>
+                <div id="reflect-opacity" class="slider" role="slider" aria-label="Reflect effect opacity" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-min="0" data-max="100" tabindex="0"></div>
+              </div>
+
+              <!-- Sharpness -->
+              <div class="flex items-center space-x-2">
+                <label for="reflect-sharpness" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Adjusts reflection clarity and contrast. Higher values create sharper, more defined reflections.">Sharpness</label>
+                <div id="reflect-sharpness" class="slider" role="slider" aria-label="Reflect sharpness and contrast" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" data-min="0" data-max="100" tabindex="0"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+        
+        <!-- Buttons -->
+        <footer class="mt-auto pt-4 space-y-2">
+          <div class="flex items-center space-x-2">
+            <button id="randomize" class="btn btn-secondary" aria-label="Generate random effect settings">
+              Shuffle
+            </button>
+            
+            <!-- Copy Code button -->
+            <button id="copyCode" class="btn btn-secondary" aria-label="Copy SVG effect code">
+              Copy Code
+            </button>
+            
+            <!-- Apply Effect split button -->
+            <div id="applySplitContainer" class="flex-grow relative">
+              <div class="btn-split w-full">
+                <button id="applyToFigma" class="btn btn-primary btn-split-main w-full" disabled aria-label="Apply displacement effect to selected layer">
+                  Apply Effect
+                </button>
+                <button id="applyChevron" class="btn btn-primary btn-split-chevron" aria-label="Open apply options" disabled tabindex="-1">
+                  <!-- small chevron icon -->
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+              <!-- Dropdown menu -->
+              <div id="applyMenu" class="dropdown-menu hidden" role="menu" aria-label="Apply options">
+                <button id="applyOptionModify" class="dropdown-item selected" role="menuitem" aria-checked="true">
+                  <span>Apply to selection</span>
+                  <span class="check">✓</span>
+                </button>
+                <div class="dropdown-separator"></div>
+                <button id="applyOptionCopy" class="dropdown-item" role="menuitem" aria-checked="false">
+                  <span>Apply as copy</span>
+                  <span class="check">✓</span>
+                </button>
+              </div>
+            </div>
+            <button id="upgradeToPro" class="btn btn-primary flex-grow" style="display: none;" aria-label="Upgrade to Pro to use this feature">
+              Upgrade to Pro
+            </button>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </div>
+  
+  <!-- Main script -->
+  <script type="module" src="main.ts"></script>
+</body>
+</html> 
