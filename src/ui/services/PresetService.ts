@@ -138,6 +138,9 @@ export class PresetService {
 
   private getCachedPresets(): PresetManifest | null {
     try {
+      // Проверяем доступность localStorage
+      if (!this.isStorageAvailable()) return null;
+      
       const cached = localStorage.getItem(this.CACHE_KEY);
       if (!cached) return null;
 
@@ -145,25 +148,49 @@ export class PresetService {
       const age = Date.now() - data.timestamp;
       
       if (age > this.CACHE_DURATION) {
-        localStorage.removeItem(this.CACHE_KEY);
+        this.clearStorageItem(this.CACHE_KEY);
         return null;
       }
 
       return data.manifest;
     } catch (error) {
-      localStorage.removeItem(this.CACHE_KEY);
+      this.clearStorageItem(this.CACHE_KEY);
       return null;
     }
   }
 
   private cachePresets(manifest: PresetManifest): void {
     try {
+      if (!this.isStorageAvailable()) return;
+      
       localStorage.setItem(this.CACHE_KEY, JSON.stringify({
         timestamp: Date.now(),
         manifest
       }));
     } catch (error) {
       // Игнорируем ошибки кэширования
+      console.warn('Cache storage failed:', error);
+    }
+  }
+
+  private isStorageAvailable(): boolean {
+    try {
+      const test = '__storage_test__';
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private clearStorageItem(key: string): void {
+    try {
+      if (this.isStorageAvailable()) {
+        localStorage.removeItem(key);
+      }
+    } catch (error) {
+      // Игнорируем ошибки
     }
   }
 

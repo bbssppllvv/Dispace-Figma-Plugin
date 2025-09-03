@@ -70,7 +70,14 @@ export class FigmaStorageAdapter implements StorageAdapter {
  * TODO: Switch to FigmaStorageAdapter in production
  */
 export function createStorageAdapter(): StorageAdapter {
-  // For now, always use localStorage
-  // TODO: Check environment and return FigmaStorageAdapter in production
-  return new LocalStorageAdapter();
+  // Проверяем доступность localStorage
+  try {
+    const test = '__storage_test__';
+    localStorage.setItem(test, test);
+    localStorage.removeItem(test);
+    return new LocalStorageAdapter();
+  } catch (error) {
+    console.warn('localStorage not available, using FigmaStorageAdapter');
+    return new FigmaStorageAdapter();
+  }
 } 
