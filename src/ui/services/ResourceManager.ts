@@ -45,7 +45,7 @@ export class ResourceManager {
   private readonly MAX_RETRIES = 3;
 
   constructor(
-    private manifestUrl: string = 'https://your-cdn.vercel.app/assets/manifest.json'
+    private manifestUrl: string = 'https://dispace-figma-assets.vercel.app/manifest.json'
   ) {}
 
   /**
