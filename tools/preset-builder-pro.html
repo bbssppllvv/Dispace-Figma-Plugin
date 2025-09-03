@@ -277,25 +277,7 @@
         this.renderPresetLibrary();
       }
 
-      parsePresetsFromTypeScript(content) {
-        // Простой парсер для извлечения пресетов из TypeScript файла
-        try {
-          // Ищем массив пресетов в содержимом файла
-          const match = content.match(/const\s+\w+:\s*Preset\[\]\s*=\s*(\[[\s\S]*?\]);/);
-          if (match) {
-            // Заменяем TypeScript синтаксис на JSON
-            let jsonStr = match[1]
-              .replace(/(\w+):/g, '"$1":')  // ключи в кавычки
-              .replace(/'/g, '"')           // одинарные кавычки в двойные
-              .replace(/,(\s*[}\]])/g, '$1'); // убираем лишние запятые
-            
-            return JSON.parse(jsonStr);
-          }
-        } catch (error) {
-          console.warn('Could not parse TypeScript presets:', error);
-        }
-        return [];
-      }
+
 
       loadDefaultPresets() {
         const defaultPresets = [
