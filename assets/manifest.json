@@ -1,22 +1,36 @@
 {
   "version": "1.0.0",
   "baseUrl": "https://dispace-figma-assets.vercel.app",
-  "generated": "2024-12-19T12:00:00.000Z",
+  "generated": "2024-12-19T20:20:00.000Z",
   "resources": {
     "displacement-maps": {
       "horizontal-bands": {
         "type": "svg",
         "path": "/displacement-maps/svg/horizontal-bands.svg",
         "hash": "sha256-abc123",
-        "size": 2048,
+        "size": 1122,
         "dimensions": { "width": 600, "height": 50 }
       },
       "vertical-ripple": {
         "type": "svg", 
         "path": "/displacement-maps/svg/vertical-ripple.svg",
         "hash": "sha256-def456",
-        "size": 1856,
+        "size": 986,
         "dimensions": { "width": 50, "height": 600 }
+      },
+      "321421314123421324": {
+        "type": "svg",
+        "path": "/displacement-maps/svg/321421314123421324.svg",
+        "hash": "sha256-ghi789",
+        "size": 3740,
+        "dimensions": { "width": 400, "height": 400 }
+      },
+      "group-15419": {
+        "type": "svg",
+        "path": "/displacement-maps/svg/Group 15419.svg",
+        "hash": "sha256-jkl012",
+        "size": 19700,
+        "dimensions": { "width": 800, "height": 600 }
       }
     }
   }
