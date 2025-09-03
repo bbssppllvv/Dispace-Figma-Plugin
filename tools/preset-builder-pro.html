@@ -664,12 +664,50 @@ export default preset;`;
       }
 
       async loadExistingAssets() {
+        console.log('🔍 Auto-scanning CDN for ALL available assets...');
+        
         try {
-          const response = await fetch(this.manifestUrl);
+          // Автоматическое обнаружение всех файлов через GitHub API
+          const githubApiUrl = 'https://api.github.com/repos/bbssppllvv/Dispace-Figma-Plugin/contents/assets/displacement-maps/svg';
+          
+          const response = await fetch(githubApiUrl);
           if (response.ok) {
-            const manifest = await response.json();
+            const files = await response.json();
             
-            // Загружаем ресурсы из манифеста
+            for (const file of files) {
+              if (file.type === 'file' && file.name.endsWith('.svg')) {
+                const id = file.name.replace(/\.[^/.]+$/, '');
+                const cdnUrl = `${this.cdnUrl}/displacement-maps/svg/${file.name}`;
+                
+                this.assets.set(id, {
+                  id,
+                  name: file.name,
+                  type: 'svg',
+                  size: file.size,
+                  dataUrl: cdnUrl,
+                  dimensions: { width: 0, height: 0 },
+                  hash: file.sha,
+                  isFromCDN: true
+                });
+                
+                console.log(`✅ Auto-discovered: ${file.name} (${file.size} bytes)`);
+              }
+            }
+            
+            this.updateAssetLibrary();
+            console.log(`🎉 Auto-loaded ${this.assets.size} assets from CDN!`);
+            return;
+          }
+        } catch (error) {
+          console.warn('GitHub API scan failed, trying manifest fallback:', error);
+        }
+
+        // Fallback: загружаем из manifest.json
+        try {
+          const manifestResponse = await fetch(this.manifestUrl);
+          if (manifestResponse.ok) {
+            const manifest = await manifestResponse.json();
+            
             Object.entries(manifest.resources || {}).forEach(([category, resources]) => {
               Object.entries(resources).forEach(([id, resource]) => {
                 this.assets.set(id, {
@@ -686,10 +724,10 @@ export default preset;`;
             });
             
             this.updateAssetLibrary();
-            console.log(`Loaded ${this.assets.size} assets from CDN`);
+            console.log(`✅ Loaded ${this.assets.size} assets from manifest`);
           }
-        } catch (error) {
-          console.warn('Could not load existing assets from CDN:', error);
+        } catch (manifestError) {
+          console.error('❌ Both auto-scan and manifest failed:', manifestError);
         }
       }
 
