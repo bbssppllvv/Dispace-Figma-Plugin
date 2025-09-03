@@ -568,6 +568,13 @@
         const output = JSON.stringify(manifest, null, 2);
         document.getElementById('output').textContent = output;
         
+        // Автоматически копируем в буфер обмена
+        navigator.clipboard.writeText(output).then(() => {
+          console.log('📋 JSON copied to clipboard automatically');
+        }).catch(() => {
+          console.warn('Could not auto-copy to clipboard');
+        });
+        
         // Показываем инструкцию по сохранению
         this.showSaveInstructions();
       }
@@ -577,11 +584,12 @@
         statusDiv.innerHTML = `
           <div class="status success">
             ✅ presets.json готов!<br>
-            <strong>Следующие шаги:</strong><br>
-            1. Скопируйте JSON из правой панели<br>
-            2. Сохраните как assets/presets.json<br>
-            3. Git commit & push → автодеплой на CDN<br>
-            4. Пресеты обновятся в плагине автоматически
+            <strong>🚀 Быстрое сохранение:</strong><br>
+            1. Скопируйте JSON из правой панели (уже в буфере)<br>
+            2. В терминале: <code>npm run preset:save</code><br>
+            3. Готово! Автодеплой на CDN + плагин обновится<br><br>
+            <strong>Или вручную:</strong><br>
+            Сохраните как assets/presets.json → Git push
           </div>
         `;
       }
