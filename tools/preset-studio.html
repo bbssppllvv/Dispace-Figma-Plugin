@@ -356,72 +356,18 @@
       
       <div class="preview-container">
         <div class="preview-viewport" id="previewViewport">
-          <svg id="previewSvg" width="100%" height="100%" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+          <!-- ПРОСТОЙ Live Preview как в старом генераторе -->
+          <svg id="previewSvg" viewBox="0 0 400 300" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <!-- Mask to hide displacement artifacts -->
-              <mask id="previewMask">
-                <rect x="0" y="0" width="400" height="300" fill="white"/>
-              </mask>
-              
-              <filter id="displacementFilter" x="-20%" y="-20%" width="140%" height="140%" 
-                      color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse">
-                
-                <!-- Source image reference -->
-                <feImage id="sourceImageRef" x="0" y="0" width="400" height="300" href="../sample01.png" result="sourceImage" image-rendering="pixelated"/>
-                
-                <!-- Displacement map (will be set dynamically) -->
-                <feImage id="dispMap" x="0" y="0" width="400" height="300" href="" result="displacementMap" image-rendering="pixelated"/>
-                
-                <!-- Tile the displacement map to cover the entire area -->
-                <feTile in="displacementMap" result="tiledDisplacement"/>
-                
-                <!-- Soft blur for displacement map (controlled by Soft parameter) -->
-                <feGaussianBlur id="mapBlur" in="tiledDisplacement" stdDeviation="0" result="softDisplacement"/>
-                
-                <!-- Pre-blur source image (controlled by Blur parameter) -->
-                <feGaussianBlur id="sourceBlur" in="sourceImage" stdDeviation="0" result="blurredSource"/>
-                
-                <!-- RGB Channel Separation (like in real plugin) -->
-                <feComponentTransfer in="blurredSource" result="redChannel">
-                  <feFuncG type="table" tableValues="0 0"/>
-                  <feFuncB type="table" tableValues="0 0"/>
-                </feComponentTransfer>
-                <feComponentTransfer in="blurredSource" result="greenChannel">
-                  <feFuncR type="table" tableValues="0 0"/>
-                  <feFuncB type="table" tableValues="0 0"/>
-                </feComponentTransfer>
-                <feComponentTransfer in="blurredSource" result="blueChannel">
-                  <feFuncR type="table" tableValues="0 0"/>
-                  <feFuncG type="table" tableValues="0 0"/>
-                </feComponentTransfer>
-                
-                <!-- Apply displacement to each channel independently -->
-                <feDisplacementMap id="dispR" in="redChannel" in2="softDisplacement" scale="0" xChannelSelector="R" yChannelSelector="G" result="displacedRed"/>
-                <feDisplacementMap id="dispG" in="greenChannel" in2="softDisplacement" scale="0" xChannelSelector="R" yChannelSelector="G" result="displacedGreen"/>
-                <feDisplacementMap id="dispB" in="blueChannel" in2="softDisplacement" scale="0" xChannelSelector="R" yChannelSelector="G" result="displacedBlue"/>
-                
-                <!-- Recombine channels -->
-                <feBlend in="displacedRed" in2="displacedGreen" mode="screen" result="redGreenCombined"/>
-                <feBlend in="redGreenCombined" in2="displacedBlue" mode="screen" result="finalResult"/>
-                
-                <feMerge>
-                  <feMergeNode in="finalResult"/>
-                </feMerge>
+              <filter id="dispFilter" x="-20%" y="-20%" width="140%" height="140%">
+                <feImage id="dispMapImage" href="" result="map"/>
+                <feDisplacementMap id="dispNode" in="SourceGraphic" in2="map" scale="50" xChannelSelector="R" yChannelSelector="G"/>
               </filter>
             </defs>
-            
-            <!-- Output rectangle with filter applied -->
-            <rect id="outputRect" x="0" y="0" width="400" height="300" 
-                  fill="url(#sourcePattern)" 
-                  filter="url(#displacementFilter)" 
-                  mask="url(#previewMask)"/>
-                  
-            <!-- Pattern for source image -->
-            <defs>
-              <pattern id="sourcePattern" patternUnits="userSpaceOnUse" width="400" height="300">
-                <image x="0" y="0" width="400" height="300" href="../sample01.png" preserveAspectRatio="xMidYMid slice"/>
-              </pattern>
-            </defs>
+            <image id="liveSource" x="0" y="0" width="400" height="300" 
+                   preserveAspectRatio="xMidYMid slice" 
+                   filter="url(#dispFilter)" 
+                   href="/sample01.png"/>
           </svg>
         </div>
         
@@ -488,12 +434,12 @@
         this.assets = new Map();
         this.currentPreset = null;
         this.cdnUrl = 'https://dispace-figma-assets.vercel.app';
+        this.proxyUrl = '/api/cdn'; // Local proxy to avoid CORS
         
         this.initializeElements();
         this.setupEventListeners();
         this.loadAssets();
         this.loadPresets();
-        this.initializePreview();
       }
 
       initializeElements() {
@@ -523,13 +469,9 @@
           blurValue: document.getElementById('blurValue'),
           softValue: document.getElementById('softValue'),
           chromaticValue: document.getElementById('chromaticValue'),
-          // SVG filter elements (matching real plugin)
-          dispMap: document.getElementById('dispMap'),
-          dispR: document.getElementById('dispR'),
-          dispG: document.getElementById('dispG'),
-          dispB: document.getElementById('dispB'),
-          mapBlur: document.getElementById('mapBlur'),
-          sourceBlur: document.getElementById('sourceBlur')
+          // SVG filter elements (simple version)
+          dispMapImage: document.getElementById('dispMapImage'),
+          dispNode: document.getElementById('dispNode')
         };
       }
 
@@ -591,7 +533,7 @@
                   name: file.name,
                   type: 'svg',
                   size: file.size,
-                  url: `${this.cdnUrl}/displacement-maps/svg/${file.name}`,
+                  url: `https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/displacement-maps/svg/${file.name}`,
                   hash: file.sha
                 });
               }
@@ -611,7 +553,9 @@
 
       async loadPresets() {
         try {
-          const response = await fetch(`${this.cdnUrl}/presets.json`, { cache: 'no-cache' });
+          // Временно используем GitHub raw files вместо CDN
+          const githubUrl = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/presets.json';
+          const response = await fetch(githubUrl, { cache: 'no-cache' });
           
           if (response.ok) {
             const data = await response.json();
@@ -901,60 +845,63 @@
         // Get current values
         const strength = parseInt(this.elements.previewStrength.value) || 0;
         const scale = parseInt(this.elements.previewScale.value) || 32;
-        const blur = parseInt(this.elements.previewBlur.value) || 0;
-        const soft = parseInt(this.elements.previewSoft.value) || 0;
-        const chromatic = parseInt(this.elements.previewChromatic.value) || 0;
         
-        console.log(`Settings: strength=${strength}, scale=${scale}, blur=${blur}, soft=${soft}, chromatic=${chromatic}`);
+        console.log(`Settings: strength=${strength}, scale=${scale}`);
 
         if (!this.currentPreset || !this.currentPreset.layers || this.currentPreset.layers.length === 0) {
           console.log('No preset or layers, clearing displacement map');
-          this.elements.dispMap.setAttribute('href', '');
-          this.resetDisplacementScales();
+          if (this.elements.dispMapImage) {
+            this.elements.dispMapImage.setAttribute('href', '');
+          }
+          if (this.elements.dispNode) {
+            this.elements.dispNode.setAttribute('scale', '0');
+          }
           return;
         }
 
-        // Use first layer for preview (matching plugin behavior)
+        // Простое решение: используем первый слой напрямую (без Canvas)
         const firstLayer = this.currentPreset.layers[0];
         if (firstLayer.src && firstLayer.src.startsWith('resource://')) {
           const assetId = firstLayer.src.replace('resource://', '');
           const asset = this.assets.get(assetId);
-          if (asset) {
-            console.log(`Setting displacement map: ${asset.name}`);
-            this.elements.dispMap.setAttribute('href', asset.url);
+          if (asset && this.elements.dispMapImage) {
+            console.log(`Setting displacement map directly: ${asset.name}`);
+            this.elements.dispMapImage.setAttribute('href', asset.url);
+            
+            // Проверяем что элементы существуют
+            console.log('🔍 Element check:', {
+              dispMapImage: !!this.elements.dispMapImage,
+              dispNode: !!this.elements.dispNode,
+              liveSource: !!document.getElementById('liveSource')
+            });
+            
+            // Проверяем что href установился
+            const actualHref = this.elements.dispMapImage.getAttribute('href');
+            console.log(`🔗 Displacement map href: ${actualHref}`);
           }
         }
-
-        // Calculate chromatic aberration offsets (exactly like in real plugin)
-        const chromaticOffset = chromatic * 0.5; // Scale chromatic input
-        const baseScale = strength;
         
-        const scaleR = baseScale - chromaticOffset;
-        const scaleG = baseScale;
-        const scaleB = baseScale + chromaticOffset;
-
-        // Apply scales to each channel (matching real plugin logic)
-        this.elements.dispR.setAttribute('scale', Math.max(0, scaleR).toString());
-        this.elements.dispG.setAttribute('scale', Math.max(0, scaleG).toString());
-        this.elements.dispB.setAttribute('scale', Math.max(0, scaleB).toString());
-
-        // Apply blur effects
-        this.elements.sourceBlur.setAttribute('stdDeviation', blur.toString());
+        // Применяем силу эффекта
+        if (this.elements.dispNode) {
+          this.elements.dispNode.setAttribute('scale', strength.toString());
+          console.log(`✅ Applied displacement scale: ${strength}`);
+          
+          // Проверяем что scale установился
+          const actualScale = this.elements.dispNode.getAttribute('scale');
+          console.log(`🔗 Displacement scale: ${actualScale}`);
+        }
         
-        // Apply soft blur to displacement map (matching plugin calculation)
-        const softBlur = soft * 0.8; // Scale soft input similar to plugin
-        this.elements.mapBlur.setAttribute('stdDeviation', softBlur.toString());
-
-        console.log(`✅ Preview updated: R=${scaleR}, G=${scaleG}, B=${scaleB}, blur=${blur}`);
+        // Проверяем что фильтр применен к изображению
+        const liveSource = document.getElementById('liveSource');
+        if (liveSource) {
+          const filterValue = liveSource.getAttribute('filter');
+          console.log(`🎨 Filter applied to image: ${filterValue}`);
+        }
       }
 
-      resetDisplacementScales() {
-        // Reset all displacement scales to 0
-        ['dispR', 'dispG', 'dispB'].forEach(id => {
-          const element = this.elements[id];
-          if (element) element.setAttribute('scale', '0');
-        });
-      }
+
+
+
 
       savePreset() {
         if (!this.currentPreset) return;
@@ -1008,72 +955,10 @@
       exportCode() {
         this.savePreset();
       }
-
-      initializePreview() {
-        console.log('🎬 Initializing Live Preview...');
-        
-        // Load a default displacement map for immediate preview
-        const defaultMapUrl = 'https://dispace-figma-assets.vercel.app/displacement-maps/svg/horizontal-bands.svg';
-        this.elements.dispMap.setAttribute('href', defaultMapUrl);
-        
-        // Set initial values
-        this.elements.previewStrength.value = '50';
-        this.elements.previewScale.value = '32';
-        this.elements.previewBlur.value = '0';
-        this.elements.previewSoft.value = '0';
-        this.elements.previewChromatic.value = '0';
-        
-        // Update displays
-        this.elements.strengthValue.textContent = '50';
-        this.elements.scaleValue.textContent = '32%';
-        this.elements.blurValue.textContent = '0';
-        this.elements.softValue.textContent = '0';
-        this.elements.chromaticValue.textContent = '0';
-        
-        // Apply initial effect
-        setTimeout(() => {
-          this.updatePreview();
-          console.log('✅ Live Preview initialized with test displacement map');
-        }, 100);
-      }
-
-      testPreview() {
-        // Debug method to test if preview is working
-        console.log('🧪 Testing Live Preview...');
-        
-        // Force set a known working displacement map
-        this.elements.dispMap.setAttribute('href', 'https://dispace-figma-assets.vercel.app/displacement-maps/svg/horizontal-bands.svg');
-        
-        // Set visible displacement values
-        this.elements.dispR.setAttribute('scale', '100');
-        this.elements.dispG.setAttribute('scale', '100');
-        this.elements.dispB.setAttribute('scale', '100');
-        
-        console.log('🎯 Set all displacement scales to 100 for testing');
-        
-        // Check if elements exist
-        console.log('Elements check:', {
-          dispMap: !!this.elements.dispMap,
-          dispR: !!this.elements.dispR,
-          dispG: !!this.elements.dispG,
-          dispB: !!this.elements.dispB,
-          sourceImage: !!document.getElementById('sourceImageRef')
-        });
-      }
     }
 
     // Initialize
     const studio = new PresetStudio();
-    
-    // Add test button to header for debugging
-    setTimeout(() => {
-      const header = document.querySelector('.header');
-      const testBtn = document.createElement('button');
-      testBtn.textContent = '🧪 Test Preview';
-      testBtn.className = 'btn';
-      testBtn.onclick = () => studio.testPreview();
-      header.appendChild(testBtn);
-    }, 1000);
   </script>
 </body>
 </html>

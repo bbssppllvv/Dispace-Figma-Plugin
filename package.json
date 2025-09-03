@@ -10,7 +10,7 @@
     "watch:ui": "vite build --watch",
     "watch": "concurrently \"npm:watch:ui\" \"esbuild src/code.ts --outfile=dist/code.js --watch\"",
     "deploy:assets": "node tools/deploy-assets.js",
-    "preset:build": "open tools/preset-studio.html",
+    "preset:build": "node tools/dev-server.js",
     "preset:save": "node tools/save-presets.js"
   },
   "keywords": [],
