@@ -1,4 +1,6 @@
 {
+  "outputDirectory": "public",
+  "buildCommand": "mkdir -p public && cp -r displacement-maps manifest.json public/",
   "headers": [
     {
       "source": "/(.*)",
