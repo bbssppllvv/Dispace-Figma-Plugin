@@ -34,11 +34,8 @@ Thumbs.db
 # Figma plugin specific
 figma-plugin.zip
 
-# Python virtual environment (for MCP server)
-figma-mcp-server/venv/
-figma-mcp-server/__pycache__/
-figma-mcp-server/*.pyc
-figma-mcp-server/meta.db
+# MCP server (separate project)
+figma-mcp-server/
 
 # Logs
 *.log
