@@ -1,0 +1,22 @@
+<svg width="600" height="50" viewBox="0 0 600 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="band1" x1="0" y1="25" x2="100" y2="25" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#008080"/>
+      <stop offset="1" stop-color="#FF8080"/>
+    </linearGradient>
+    <linearGradient id="band2" x1="100" y1="25" x2="200" y2="25" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#008080"/>
+      <stop offset="1" stop-color="#FF8080"/>
+    </linearGradient>
+    <linearGradient id="band3" x1="200" y1="25" x2="300" y2="25" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#008080"/>
+      <stop offset="1" stop-color="#FF8080"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="100" height="50" fill="url(#band1)"/>
+  <rect x="100" y="0" width="100" height="50" fill="url(#band2)"/>
+  <rect x="200" y="0" width="100" height="50" fill="url(#band3)"/>
+  <rect x="300" y="0" width="100" height="50" fill="url(#band1)"/>
+  <rect x="400" y="0" width="100" height="50" fill="url(#band2)"/>
+  <rect x="500" y="0" width="100" height="50" fill="url(#band3)"/>
+</svg>

@@ -4,7 +4,7 @@
   "description": "CDN assets for Displace 2.0 Figma Plugin",
   "private": true,
   "scripts": {
-    "build": "echo 'Assets ready for deployment'"
+    "build": "mkdir -p public && cp -r displacement-maps manifest.json public/"
   },
   "keywords": ["figma", "plugin", "assets", "displacement"],
   "author": "",
