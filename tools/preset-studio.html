@@ -493,6 +493,7 @@
         this.setupEventListeners();
         this.loadAssets();
         this.loadPresets();
+        this.initializePreview();
       }
 
       initializeElements() {
@@ -1007,10 +1008,72 @@
       exportCode() {
         this.savePreset();
       }
+
+      initializePreview() {
+        console.log('🎬 Initializing Live Preview...');
+        
+        // Load a default displacement map for immediate preview
+        const defaultMapUrl = 'https://dispace-figma-assets.vercel.app/displacement-maps/svg/horizontal-bands.svg';
+        this.elements.dispMap.setAttribute('href', defaultMapUrl);
+        
+        // Set initial values
+        this.elements.previewStrength.value = '50';
+        this.elements.previewScale.value = '32';
+        this.elements.previewBlur.value = '0';
+        this.elements.previewSoft.value = '0';
+        this.elements.previewChromatic.value = '0';
+        
+        // Update displays
+        this.elements.strengthValue.textContent = '50';
+        this.elements.scaleValue.textContent = '32%';
+        this.elements.blurValue.textContent = '0';
+        this.elements.softValue.textContent = '0';
+        this.elements.chromaticValue.textContent = '0';
+        
+        // Apply initial effect
+        setTimeout(() => {
+          this.updatePreview();
+          console.log('✅ Live Preview initialized with test displacement map');
+        }, 100);
+      }
+
+      testPreview() {
+        // Debug method to test if preview is working
+        console.log('🧪 Testing Live Preview...');
+        
+        // Force set a known working displacement map
+        this.elements.dispMap.setAttribute('href', 'https://dispace-figma-assets.vercel.app/displacement-maps/svg/horizontal-bands.svg');
+        
+        // Set visible displacement values
+        this.elements.dispR.setAttribute('scale', '100');
+        this.elements.dispG.setAttribute('scale', '100');
+        this.elements.dispB.setAttribute('scale', '100');
+        
+        console.log('🎯 Set all displacement scales to 100 for testing');
+        
+        // Check if elements exist
+        console.log('Elements check:', {
+          dispMap: !!this.elements.dispMap,
+          dispR: !!this.elements.dispR,
+          dispG: !!this.elements.dispG,
+          dispB: !!this.elements.dispB,
+          sourceImage: !!document.getElementById('sourceImageRef')
+        });
+      }
     }
 
     // Initialize
     const studio = new PresetStudio();
+    
+    // Add test button to header for debugging
+    setTimeout(() => {
+      const header = document.querySelector('.header');
+      const testBtn = document.createElement('button');
+      testBtn.textContent = '🧪 Test Preview';
+      testBtn.className = 'btn';
+      testBtn.onclick = () => studio.testPreview();
+      header.appendChild(testBtn);
+    }, 1000);
   </script>
 </body>
 </html>
