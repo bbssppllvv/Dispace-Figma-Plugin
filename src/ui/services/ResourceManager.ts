@@ -65,7 +65,7 @@ export class ResourceManager {
       }
       
       this.manifest = await response.json();
-      console.log(`✅ ResourceManager initialized with ${Object.keys(this.manifest.resources).length} categories`);
+      console.log(`✅ ResourceManager initialized with ${Object.keys(this.manifest?.resources || {}).length} categories`);
       
       // Preload critical resources
       await this.preloadCriticalResources();
@@ -251,6 +251,22 @@ export class ResourceManager {
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Prefetch multiple resources (for engine compatibility)
+   */
+  async prefetchMapSources(sources: string[]): Promise<void> {
+    const promises = sources.map(async (src) => {
+      try {
+        await this.loadResource(src);
+      } catch (error) {
+        // Silent fail for prefetching
+        console.warn(`Prefetch failed for ${src}:`, error);
+      }
+    });
+    
+    await Promise.allSettled(promises);
   }
 
   /**

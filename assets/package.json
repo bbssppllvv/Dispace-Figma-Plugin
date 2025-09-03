@@ -1,0 +1,12 @@
+{
+  "name": "displace-plugin-assets",
+  "version": "1.0.0",
+  "description": "CDN assets for Displace 2.0 Figma Plugin",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Assets ready for deployment'"
+  },
+  "keywords": ["figma", "plugin", "assets", "displacement"],
+  "author": "",
+  "license": "MIT"
+}

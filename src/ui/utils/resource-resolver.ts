@@ -73,18 +73,8 @@ export async function preloadResources(sources: string[]): Promise<void> {
   try {
     const resourceIds = resourceSources.map(src => src.replace('resource://', ''));
     
-    // Use ResourceManager's prefetch if available
-    if (typeof resourceManager.prefetchMapSources === 'function') {
-      await resourceManager.prefetchMapSources(resourceIds);
-    } else {
-      // Fallback to individual loading
-      const promises = resourceIds.map(id => 
-        resourceManager.loadResource(id).catch(() => {
-          // Silent fail for preloading
-        })
-      );
-      await Promise.allSettled(promises);
-    }
+    // Use ResourceManager's prefetch method
+    await resourceManager.prefetchMapSources(resourceIds);
   } catch (error) {
     console.warn('Resource preloading failed:', error);
   }
