@@ -18,6 +18,7 @@ export { figmaService } from './FigmaService';
 export { imageCache } from './StorageService';
 export { licenseService } from './LicenseService';
 export { resourceManager } from './ResourceManager';
+export { presetService } from './PresetService';
 export { createStorageAdapter, LocalStorageAdapter, FigmaStorageAdapter } from './StorageAdapter';
 
 /**

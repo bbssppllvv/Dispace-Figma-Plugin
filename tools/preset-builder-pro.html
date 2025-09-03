@@ -250,20 +250,23 @@
 
       async loadPresetLibrary() {
         try {
-          // Загружаем существующие пресеты из GitHub (через raw URL)
-          const response = await fetch('https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/src/ui/presets/definitions/glass-effects.ts');
+          // Загружаем единый файл пресетов с CDN
+          const response = await fetch('https://dispace-figma-assets.vercel.app/presets.json', {
+            cache: 'no-cache'
+          });
           
           if (response.ok) {
-            const content = await response.text();
-            // Извлекаем пресеты из TypeScript файла (простой парсинг)
-            const presets = this.parsePresetsFromTypeScript(content);
+            const data = await response.json();
+            const presets = data.presets || [];
             
             this.presets.clear();
             presets.forEach(preset => {
               this.presets.set(preset.id, preset);
             });
+            
+            console.log(`✅ Loaded ${presets.length} presets from CDN`);
           } else {
-            console.warn('Could not load existing presets, using defaults');
+            console.warn('Could not load presets from CDN, using defaults');
             this.loadDefaultPresets();
           }
         } catch (error) {
@@ -528,7 +531,8 @@
           defaultScale: parseInt(document.getElementById('defaultScale').value),
           defaultStrength: parseInt(document.getElementById('defaultStrength').value),
           premium: document.getElementById('premiumPreset').checked,
-          layers: this.collectLayersFromEditor()
+          layers: this.collectLayersFromEditor(),
+          order: this.currentPreset.order || this.getNextOrderNumber()
         };
 
         // Update in memory
@@ -538,10 +542,66 @@
         // Re-render library
         this.renderPresetLibrary();
 
-        // Generate output
-        this.generatePresetOutput(updatedPreset);
+        // Generate complete presets.json file
+        this.generatePresetsJson();
 
         console.log('Preset saved:', updatedPreset);
+      }
+
+      getNextOrderNumber() {
+        let maxOrder = 0;
+        this.presets.forEach(preset => {
+          if (preset.order && preset.order > maxOrder) {
+            maxOrder = preset.order;
+          }
+        });
+        return maxOrder + 1;
+      }
+
+      generatePresetsJson() {
+        const presetsArray = Array.from(this.presets.values());
+        
+        const manifest = {
+          version: '1.0.0',
+          updated: new Date().toISOString(),
+          presets: presetsArray.sort((a, b) => {
+            // Сортируем по категории, потом по order, потом по имени
+            const categoryOrder = {
+              'Popular': 1, 'Ribbed glass': 2, 'Fabric': 3, 
+              'Geometric': 4, 'Organic': 5, 'Custom': 100
+            };
+            
+            const pa = categoryOrder[a.category] || 999;
+            const pb = categoryOrder[b.category] || 999;
+            if (pa !== pb) return pa - pb;
+            
+            const oa = a.order || 9999;
+            const ob = b.order || 9999;
+            if (oa !== ob) return oa - ob;
+            
+            return a.name.localeCompare(b.name);
+          })
+        };
+
+        const output = JSON.stringify(manifest, null, 2);
+        document.getElementById('output').textContent = output;
+        
+        // Показываем инструкцию по сохранению
+        this.showSaveInstructions();
+      }
+
+      showSaveInstructions() {
+        const statusDiv = document.getElementById('uploadStatus');
+        statusDiv.innerHTML = `
+          <div class="status success">
+            ✅ presets.json готов!<br>
+            <strong>Следующие шаги:</strong><br>
+            1. Скопируйте JSON из правой панели<br>
+            2. Сохраните как assets/presets.json<br>
+            3. Git commit & push → автодеплой на CDN<br>
+            4. Пресеты обновятся в плагине автоматически
+          </div>
+        `;
       }
 
       collectLayersFromEditor() {

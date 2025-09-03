@@ -16,4 +16,11 @@ export function refreshPresetGallery(): void {
   view?.refreshBadges();
 }
 
+export async function refreshPresetsFromCDN(): Promise<void> {
+  if (view) {
+    await (view as any).store.refreshFromCDN();
+    (view as any).render();
+  }
+}
+
 
