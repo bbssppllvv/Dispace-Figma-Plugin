@@ -1,7 +1,25 @@
 {
   "version": "1.0.0",
-  "updated": "2024-12-19T16:00:00.000Z",
+  "updated": "2025-09-04T12:03:31.698Z",
   "presets": [
+    {
+      "id": "complex-glass",
+      "name": "Complex Glass",
+      "category": "Ribbed glass",
+      "defaultScale": 32,
+      "defaultStrength": 200,
+      "premium": true,
+      "order": 3,
+      "layers": [
+        {
+          "src": "resource://321421314123421324",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ]
+    },
     {
       "id": "horizontal-glass",
       "name": "Horizontal Glass",
@@ -35,33 +53,6 @@
           "alignY": "center"
         }
       ]
-    },
-    {
-      "id": "complex-glass",
-      "name": "Complex Glass",
-      "category": "Ribbed glass",
-      "defaultScale": 32,
-      "defaultStrength": 200,
-      "premium": true,
-      "order": 3,
-      "layers": [
-        {
-          "src": "resource://vertical-ripple",
-          "tiling": "tiled",
-          "scaleMode": "yOnly",
-          "alignX": "center",
-          "alignY": "center"
-        },
-        {
-          "src": "resource://horizontal-bands",
-          "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "blendMode": "overlay",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ]
     }
   ]
 }
-
