@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-08T17:04:31.195Z",
+  "updated": "2025-09-08T17:07:30.902Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -35,7 +35,8 @@
           "alignX": "center",
           "alignY": "center"
         }
-      ]
+      ],
+      "premium": true
     },
     {
       "id": "vertical-glass",
