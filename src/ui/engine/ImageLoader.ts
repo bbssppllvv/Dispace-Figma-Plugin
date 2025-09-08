@@ -19,6 +19,7 @@
  */
 
 import { processImageForPreview } from '../utils/image';
+import { resolveResourceUrl } from '../utils/resource-resolver';
 import { APP_CONFIG } from '../config/constants';
 import { showSpinner } from '../utils/spinner';
 import type { SVGElements, EngineState, MapSource, MultiLayerMapSource } from './types';
@@ -68,6 +69,7 @@ export class ImageLoader {
   /**
    * Load an image with URL→Image cache and in-flight de-duplication.
    * Accepts string URL, File, or HTMLImageElement.
+   * Automatically resolves resource:// URLs through ResourceManager.
    */
   private async loadImageWithCache(src: string | File | HTMLImageElement): Promise<HTMLImageElement> {
     // Direct image objects bypass cache; they are already decoded
@@ -76,13 +78,18 @@ export class ImageLoader {
     }
 
     // Resolve to URL/dataURL string
-    const url: string = typeof src === 'string'
-      ? src
-      : await new Promise<string>((res) => {
-          const reader = new FileReader();
-          reader.onload = () => res(reader.result as string);
-          reader.readAsDataURL(src as File);
-        });
+    let url: string;
+    if (typeof src === 'string') {
+      // Resolve resource:// URLs through ResourceManager
+      url = await resolveResourceUrl(src);
+    } else {
+      // File object to data URL
+      url = await new Promise<string>((res) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result as string);
+        reader.readAsDataURL(src as File);
+      });
+    }
 
     const key = url;
     const cached = ImageLoader.layerImageCache.get(key);

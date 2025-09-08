@@ -356,18 +356,62 @@
       
       <div class="preview-container">
         <div class="preview-viewport" id="previewViewport">
-          <!-- ПРОСТОЙ Live Preview как в старом генераторе -->
-          <svg id="previewSvg" viewBox="0 0 400 300" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <!-- ТОЧНАЯ КОПИЯ SVG фильтра из плагина -->
+          <svg id="previewSvg" viewBox="0 0 400 300" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" 
+               style="image-rendering: pixelated; image-rendering: crisp-edges;">
             <defs>
-              <filter id="dispFilter" x="-20%" y="-20%" width="140%" height="140%">
-                <feImage id="dispMapImage" href="" result="map"/>
-                <feDisplacementMap id="dispNode" in="SourceGraphic" in2="map" scale="50" xChannelSelector="R" yChannelSelector="G"/>
+              <!-- Mask to hide mirrored edges -->
+              <mask id="imageMask">
+                <rect id="maskRect" x="0" y="0" width="400" height="300" fill="white"/>
+              </mask>
+              
+              <filter id="f" x="-80" y="-60" width="560" height="420" 
+                      color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse">
+                
+                <!-- Source image, loaded via JS -->
+                <feImage id="feSourceImg" width="400" height="300" x="0" y="0" href="/sample01.png" image-rendering="pixelated" result="sourceImage" />
+                
+                <!-- Displacement map, loaded via JS, which will be tiled -->
+                <feImage id="feImg" x="0" y="0" width="400" height="300" result="fileMap" image-rendering="pixelated" />
+
+                <!-- Soft blur applied to displacement map -->
+                <feGaussianBlur id="feMapGaussianBlur" in="fileMap" stdDeviation="0" result="fileMapSoft" />
+                
+                <!-- Pre-blur the source image -->
+                <feGaussianBlur id="feSourceGaussianBlur" in="sourceImage" stdDeviation="0" result="BlurredSource" />
+
+                <!-- STEP 1: Separate blurred image into R, G, B channels -->
+                <feComponentTransfer in="BlurredSource" result="R_channel">
+                  <feFuncG type="table" tableValues="0 0"/>
+                  <feFuncB type="table" tableValues="0 0"/>
+                </feComponentTransfer>
+                <feComponentTransfer in="BlurredSource" result="G_channel">
+                  <feFuncR type="table" tableValues="0 0"/>
+                  <feFuncB type="table" tableValues="0 0"/>
+                </feComponentTransfer>
+                <feComponentTransfer in="BlurredSource" result="B_channel">
+                  <feFuncR type="table" tableValues="0 0"/>
+                  <feFuncG type="table" tableValues="0 0"/>
+                </feComponentTransfer>
+
+                <!-- STEP 2: Displace each channel independently based on blurred fileMap -->
+                <feDisplacementMap id="feDispMapR" in="R_channel" in2="fileMapSoft" scale="0" xChannelSelector="R" yChannelSelector="G" result="displaced_R" />
+                <feDisplacementMap id="feDispMapG" in="G_channel" in2="fileMapSoft" scale="0" xChannelSelector="R" yChannelSelector="G" result="displaced_G" />
+                <feDisplacementMap id="feDispMapB" in="B_channel" in2="fileMapSoft" scale="0" xChannelSelector="R" yChannelSelector="G" result="displaced_B" />
+
+                <!-- STEP 3: Recombine the displaced channels -->
+                <feBlend in="displaced_R" in2="displaced_G" mode="screen" result="RG_displaced" />
+                <feBlend in="RG_displaced" in2="displaced_B" mode="screen" result="FinalDisplaced" />
+
+                <!-- STEP 4: Pass-through to preserve result -->
+                <feOffset in="FinalDisplaced" dx="0" dy="0" result="clippedResult" />
+
+                <feMerge>
+                  <feMergeNode in="clippedResult"/>
+                </feMerge>
               </filter>
             </defs>
-            <image id="liveSource" x="0" y="0" width="400" height="300" 
-                   preserveAspectRatio="xMidYMid slice" 
-                   filter="url(#dispFilter)" 
-                   href="/sample01.png"/>
+            <rect id="outputRect" x="0" y="0" width="400" height="300" filter="url(#f)" mask="url(#imageMask)"/>
           </svg>
         </div>
         
@@ -382,21 +426,6 @@
               <span class="control-label">Scale</span>
               <input type="range" class="control-slider" id="previewScale" min="2" max="100" value="32">
               <span class="control-value" id="scaleValue">32%</span>
-            </div>
-            <div class="control-row">
-              <span class="control-label">Blur</span>
-              <input type="range" class="control-slider" id="previewBlur" min="0" max="20" value="0">
-              <span class="control-value" id="blurValue">0</span>
-            </div>
-            <div class="control-row">
-              <span class="control-label">Soft</span>
-              <input type="range" class="control-slider" id="previewSoft" min="0" max="20" value="0">
-              <span class="control-value" id="softValue">0</span>
-            </div>
-            <div class="control-row">
-              <span class="control-label">Chromatic</span>
-              <input type="range" class="control-slider" id="previewChromatic" min="0" max="50" value="0">
-              <span class="control-value" id="chromaticValue">0</span>
             </div>
           </div>
         </div>
@@ -461,17 +490,16 @@
           assetGrid: document.getElementById('assetGrid'),
           previewStrength: document.getElementById('previewStrength'),
           previewScale: document.getElementById('previewScale'),
-          previewBlur: document.getElementById('previewBlur'),
-          previewSoft: document.getElementById('previewSoft'),
-          previewChromatic: document.getElementById('previewChromatic'),
           strengthValue: document.getElementById('strengthValue'),
           scaleValue: document.getElementById('scaleValue'),
-          blurValue: document.getElementById('blurValue'),
-          softValue: document.getElementById('softValue'),
-          chromaticValue: document.getElementById('chromaticValue'),
-          // SVG filter elements (simple version)
-          dispMapImage: document.getElementById('dispMapImage'),
-          dispNode: document.getElementById('dispNode')
+          // SVG filter elements (точная копия из плагина)
+          feImg: document.getElementById('feImg'),
+          feSourceImg: document.getElementById('feSourceImg'),
+          feDispMapR: document.getElementById('feDispMapR'),
+          feDispMapG: document.getElementById('feDispMapG'),
+          feDispMapB: document.getElementById('feDispMapB'),
+          feMapGaussianBlur: document.getElementById('feMapGaussianBlur'),
+          feSourceGaussianBlur: document.getElementById('feSourceGaussianBlur')
         };
       }
 
@@ -482,12 +510,9 @@
         document.getElementById('exportCode').addEventListener('click', () => this.exportCode());
         document.getElementById('closeAssetModal').addEventListener('click', () => this.closeAssetModal());
 
-        // Preview controls
+        // Preview controls (только Strength и Scale)
         this.elements.previewStrength.addEventListener('input', () => this.updatePreview());
         this.elements.previewScale.addEventListener('input', () => this.updatePreview());
-        this.elements.previewBlur.addEventListener('input', () => this.updatePreview());
-        this.elements.previewSoft.addEventListener('input', () => this.updatePreview());
-        this.elements.previewChromatic.addEventListener('input', () => this.updatePreview());
 
         // Update value displays
         this.elements.previewStrength.addEventListener('input', (e) => {
@@ -495,15 +520,6 @@
         });
         this.elements.previewScale.addEventListener('input', (e) => {
           this.elements.scaleValue.textContent = e.target.value + '%';
-        });
-        this.elements.previewBlur.addEventListener('input', (e) => {
-          this.elements.blurValue.textContent = e.target.value;
-        });
-        this.elements.previewSoft.addEventListener('input', (e) => {
-          this.elements.softValue.textContent = e.target.value;
-        });
-        this.elements.previewChromatic.addEventListener('input', (e) => {
-          this.elements.chromaticValue.textContent = e.target.value;
         });
 
         // Form changes
@@ -839,10 +855,10 @@
         this.renderPresetList();
       }
 
-      updatePreview() {
-        console.log('🎨 Updating preview...');
+      async updatePreview() {
+        console.log('🎨 Updating preview (CANVAS GENERATION like plugin)...');
         
-        // Get current values
+        // Только базовые настройки
         const strength = parseInt(this.elements.previewStrength.value) || 0;
         const scale = parseInt(this.elements.previewScale.value) || 32;
         
@@ -850,53 +866,185 @@
 
         if (!this.currentPreset || !this.currentPreset.layers || this.currentPreset.layers.length === 0) {
           console.log('No preset or layers, clearing displacement map');
-          if (this.elements.dispMapImage) {
-            this.elements.dispMapImage.setAttribute('href', '');
+          if (this.elements.feImg) {
+            this.elements.feImg.setAttribute('href', '');
           }
-          if (this.elements.dispNode) {
-            this.elements.dispNode.setAttribute('scale', '0');
-          }
+          this.resetDisplacementScales();
           return;
         }
 
-        // Простое решение: используем первый слой напрямую (без Canvas)
-        const firstLayer = this.currentPreset.layers[0];
-        if (firstLayer.src && firstLayer.src.startsWith('resource://')) {
-          const assetId = firstLayer.src.replace('resource://', '');
-          const asset = this.assets.get(assetId);
-          if (asset && this.elements.dispMapImage) {
-            console.log(`Setting displacement map directly: ${asset.name}`);
-            this.elements.dispMapImage.setAttribute('href', asset.url);
-            
-            // Проверяем что элементы существуют
-            console.log('🔍 Element check:', {
-              dispMapImage: !!this.elements.dispMapImage,
-              dispNode: !!this.elements.dispNode,
-              liveSource: !!document.getElementById('liveSource')
-            });
-            
-            // Проверяем что href установился
-            const actualHref = this.elements.dispMapImage.getAttribute('href');
-            console.log(`🔗 Displacement map href: ${actualHref}`);
+        // КЛЮЧЕВОЕ ОТЛИЧИЕ: Генерируем displacement texture через Canvas (как в плагине)
+        try {
+          await this.generateDisplacementTexture(scale);
+        } catch (error) {
+          console.error('Failed to generate displacement texture:', error);
+          return;
+        }
+
+        // Убираем blur эффекты (не нужны для базового preview)
+        if (this.elements.feSourceGaussianBlur) {
+          this.elements.feSourceGaussianBlur.setAttribute('stdDeviation', '0');
+        }
+        if (this.elements.feMapGaussianBlur) {
+          this.elements.feMapGaussianBlur.setAttribute('stdDeviation', '0');
+        }
+
+        // Применяем одинаковый displacement ко всем каналам (без chromatic)
+        const displacementScale = strength;
+
+        if (this.elements.feDispMapR) {
+          this.elements.feDispMapR.setAttribute('scale', displacementScale.toString());
+        }
+        if (this.elements.feDispMapG) {
+          this.elements.feDispMapG.setAttribute('scale', displacementScale.toString());
+        }
+        if (this.elements.feDispMapB) {
+          this.elements.feDispMapB.setAttribute('scale', displacementScale.toString());
+        }
+
+        console.log(`✅ Applied displacement: ${displacementScale} (with Canvas-generated texture)`);
+      }
+
+      async generateDisplacementTexture(scalePct) {
+        console.log('🗺️ Generating Canvas displacement texture (like in plugin)...');
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 300;
+        const ctx = canvas.getContext('2d');
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, 400, 300);
+        
+        // Используем локальные SVG файлы для избежания CORS
+        const layers = this.currentPreset.layers || [];
+        
+        for (const layer of layers) {
+          if (!layer.src || !layer.src.startsWith('resource://')) continue;
+          
+          const assetId = layer.src.replace('resource://', '');
+          
+          // Создаем простую тестовую текстуру для каждого типа
+          let testTexture;
+          if (assetId.includes('horizontal')) {
+            testTexture = this.createHorizontalGradient();
+          } else if (assetId.includes('vertical')) {
+            testTexture = this.createVerticalGradient();
+          } else {
+            testTexture = this.createRadialGradient();
+          }
+          
+          // Рисуем tiled текстуру
+          await this.drawTiledTexture(ctx, 400, 300, testTexture, scalePct, layer);
+          
+          console.log(`✅ Drew layer: ${assetId} (generated texture)`);
+        }
+        
+        // Если нет слоев, создаем нейтральную текстуру
+        if (layers.length === 0) {
+          ctx.fillStyle = '#808080';
+          ctx.fillRect(0, 0, 400, 300);
+        }
+        
+        // Применяем к SVG фильтру
+        const dataUrl = canvas.toDataURL('image/png');
+        if (this.elements.feImg) {
+          this.elements.feImg.setAttribute('href', dataUrl);
+          console.log('✅ Updated feImg with Canvas-generated displacement texture');
+        }
+      }
+
+      createHorizontalGradient() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        
+        const gradient = ctx.createLinearGradient(0, 0, 100, 0);
+        gradient.addColorStop(0, '#000000');    // Black = left displacement
+        gradient.addColorStop(0.5, '#808080');  // Gray = no displacement  
+        gradient.addColorStop(1, '#ffffff');    // White = right displacement
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 100, 50);
+        
+        return canvas;
+      }
+
+      createVerticalGradient() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 50;
+        canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, 100);
+        gradient.addColorStop(0, '#000000');    // Black = up displacement
+        gradient.addColorStop(0.5, '#808080');  // Gray = no displacement
+        gradient.addColorStop(1, '#ffffff');    // White = down displacement
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 50, 100);
+        
+        return canvas;
+      }
+
+      createRadialGradient() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        
+        const gradient = ctx.createRadialGradient(100, 100, 0, 100, 100, 100);
+        gradient.addColorStop(0, '#ffffff');    // White = outward displacement
+        gradient.addColorStop(0.5, '#808080');  // Gray = no displacement
+        gradient.addColorStop(1, '#000000');    // Black = inward displacement
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 200, 200);
+        
+        return canvas;
+      }
+
+      async drawTiledTexture(ctx, canvasW, canvasH, textureCanvas, scalePct, layer) {
+        const scale = scalePct * 0.01;
+        let w = Math.max(1, textureCanvas.width * scale);
+        let h = Math.max(1, textureCanvas.height * scale);
+        
+        const scaleMode = layer.scaleMode || 'uniform';
+        if (scaleMode === 'xOnly') h = canvasH;
+        else if (scaleMode === 'yOnly') w = canvasW;
+        
+        // Alignment
+        let originX = 0, originY = 0;
+        const alignX = layer.alignX || 'center';
+        const alignY = layer.alignY || 'center';
+        
+        if (alignX === 'center') originX = Math.floor((canvasW - w) / 2);
+        else if (alignX === 'right') originX = canvasW - w;
+        if (alignY === 'center') originY = Math.floor((canvasH - h) / 2);
+        else if (alignY === 'bottom') originY = canvasH - h;
+        
+        // Tiling (как в FilterRenderer)
+        const startI = Math.floor((0 - originX) / w) - 1;
+        const startJ = Math.floor((0 - originY) / h) - 1;
+        const endI = Math.ceil((canvasW - originX) / w) + 1;
+        const endJ = Math.ceil((canvasH - originY) / h) + 1;
+        
+        for (let i = startI; i <= endI; i++) {
+          for (let j = startJ; j <= endJ; j++) {
+            const x = originX + i * w;
+            const y = originY + j * h;
+            if (x > canvasW || y > canvasH || x + w < 0 || y + h < 0) continue;
+            ctx.drawImage(textureCanvas, x, y, w, h);
           }
         }
-        
-        // Применяем силу эффекта
-        if (this.elements.dispNode) {
-          this.elements.dispNode.setAttribute('scale', strength.toString());
-          console.log(`✅ Applied displacement scale: ${strength}`);
-          
-          // Проверяем что scale установился
-          const actualScale = this.elements.dispNode.getAttribute('scale');
-          console.log(`🔗 Displacement scale: ${actualScale}`);
-        }
-        
-        // Проверяем что фильтр применен к изображению
-        const liveSource = document.getElementById('liveSource');
-        if (liveSource) {
-          const filterValue = liveSource.getAttribute('filter');
-          console.log(`🎨 Filter applied to image: ${filterValue}`);
-        }
+      }
+
+      resetDisplacementScales() {
+        // Reset все displacement scales к 0
+        if (this.elements.feDispMapR) this.elements.feDispMapR.setAttribute('scale', '0');
+        if (this.elements.feDispMapG) this.elements.feDispMapG.setAttribute('scale', '0');
+        if (this.elements.feDispMapB) this.elements.feDispMapB.setAttribute('scale', '0');
       }
 
 
