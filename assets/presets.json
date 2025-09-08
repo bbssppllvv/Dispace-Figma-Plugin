@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-04T12:03:31.698Z",
+  "updated": "2025-09-08T16:59:11.417Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -46,7 +46,7 @@
       "order": 2,
       "layers": [
         {
-          "src": "resource://vertical-ripple",
+          "src": "resource://321421314123421324",
           "tiling": "tiled",
           "scaleMode": "yOnly",
           "alignX": "center",
