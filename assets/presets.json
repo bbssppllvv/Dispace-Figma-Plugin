@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-08T16:59:11.417Z",
+  "updated": "2025-09-08T17:04:31.195Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -51,6 +51,20 @@
           "scaleMode": "yOnly",
           "alignX": "center",
           "alignY": "center"
+        }
+      ]
+    },
+    {
+      "id": "preset-1757351064314",
+      "name": "New Preset",
+      "category": "Custom",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "layers": [
+        {
+          "src": "resource://321421314123421324",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
         }
       ]
     }
