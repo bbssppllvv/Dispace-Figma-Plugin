@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:20:27.302Z",
+  "updated": "2025-09-09T14:22:05.775Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -121,8 +121,8 @@
       "premium": false
     },
     {
-      "id": "vertical",
-      "name": "vertical",
+      "id": "vertical2",
+      "name": "vertical2",
       "category": "vertical2",
       "defaultScale": 32,
       "defaultStrength": 133,
@@ -138,8 +138,8 @@
       "premium": false
     },
     {
-      "id": "vertical",
-      "name": "vertical",
+      "id": "vertical2",
+      "name": "vertical2",
       "category": "vertical2",
       "defaultScale": 32,
       "defaultStrength": 133,
