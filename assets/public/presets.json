@@ -1,7 +1,25 @@
 {
   "version": "1.0.0",
-  "updated": "2024-12-19T16:00:00.000Z",
+  "updated": "2025-09-09T12:45:22.060Z",
   "presets": [
+    {
+      "id": "complex-glass",
+      "name": "Complex Glass",
+      "category": "Ribbed glass",
+      "defaultScale": 32,
+      "defaultStrength": 200,
+      "premium": true,
+      "order": 3,
+      "layers": [
+        {
+          "src": "resource://321421314123421324",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ]
+    },
     {
       "id": "horizontal-glass",
       "name": "Horizontal Glass",
@@ -17,7 +35,8 @@
           "alignX": "center",
           "alignY": "center"
         }
-      ]
+      ],
+      "premium": true
     },
     {
       "id": "vertical-glass",
@@ -28,7 +47,7 @@
       "order": 2,
       "layers": [
         {
-          "src": "resource://vertical-ripple",
+          "src": "resource://321421314123421324",
           "tiling": "tiled",
           "scaleMode": "yOnly",
           "alignX": "center",
@@ -37,31 +56,52 @@
       ]
     },
     {
-      "id": "complex-glass",
-      "name": "Complex Glass",
-      "category": "Ribbed glass",
-      "defaultScale": 32,
-      "defaultStrength": 200,
-      "premium": true,
-      "order": 3,
+      "id": "Block ll",
+      "name": "Block ll",
+      "category": "Block",
+      "defaultScale": 25,
+      "defaultStrength": 80,
       "layers": [
         {
-          "src": "resource://vertical-ripple",
+          "src": "resource://321421314123421324",
           "tiling": "tiled",
-          "scaleMode": "yOnly",
-          "alignX": "center",
-          "alignY": "center"
-        },
-        {
-          "src": "resource://horizontal-bands",
-          "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "blendMode": "overlay",
+          "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
         }
-      ]
+      ],
+      "premium": false
+    },
+    {
+      "id": "preset-1757351064314",
+      "name": "New Preset",
+      "category": "New",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "layers": [
+        {
+          "src": "resource://Group 15419",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "blendMode": "overlay"
+        }
+      ],
+      "premium": false
+    },
+    {
+      "id": "preset-1757417311252",
+      "name": "New Preset",
+      "category": "neww",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "layers": [
+        {
+          "src": "resource://321421314123421324",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
+        }
+      ],
+      "premium": false
     }
   ]
 }
-

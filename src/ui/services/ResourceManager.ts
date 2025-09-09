@@ -45,35 +45,60 @@ export class ResourceManager {
   private readonly MAX_RETRIES = 3;
 
   constructor(
-    private manifestUrl: string = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/manifest.json',
+    private githubApiUrl: string = 'https://api.github.com/repos/bbssppllvv/Dispace-Figma-Plugin/contents/assets/displacement-maps/svg',
     private cdnBaseUrl: string = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets'
   ) {}
 
   /**
-   * Initialize resource manager by loading manifest
+   * Initialize resource manager by scanning GitHub API
    */
   async initialize(): Promise<void> {
     try {
-      const response = await fetch(this.manifestUrl, {
-        cache: 'force-cache',
+      console.log('🔍 Scanning GitHub for available resources...');
+      
+      const response = await fetch(this.githubApiUrl, {
         headers: {
-          'Accept': 'application/json'
+          'Accept': 'application/vnd.github.v3+json'
         }
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to load manifest: ${response.status}`);
+        throw new Error(`Failed to scan GitHub: ${response.status}`);
       }
       
-      this.manifest = await response.json();
-      console.log(`✅ ResourceManager initialized with ${Object.keys(this.manifest?.resources || {}).length} categories`);
+      const files = await response.json();
+      
+      // Создаем виртуальный manifest из GitHub API
+      this.manifest = {
+        version: '1.0.0',
+        baseUrl: this.cdnBaseUrl,
+        resources: {
+          'displacement-maps': {}
+        }
+      };
+      
+      for (const file of files) {
+        if (file.type === 'file' && file.name.endsWith('.svg')) {
+          const id = file.name.replace(/\.[^/.]+$/, '');
+          this.manifest.resources['displacement-maps'][id] = {
+            type: 'svg',
+            path: `/displacement-maps/svg/${file.name}`,
+            hash: file.sha,
+            size: file.size,
+            dimensions: { width: 0, height: 0 } // Will be loaded on demand
+          };
+        }
+      }
+      
+      const resourceCount = Object.keys(this.manifest.resources['displacement-maps']).length;
+      console.log(`✅ ResourceManager auto-discovered ${resourceCount} resources from GitHub`);
       
       // Preload critical resources
       await this.preloadCriticalResources();
       
     } catch (error) {
-      console.error('❌ ResourceManager initialization failed:', error);
-      // Continue without manifest - will use fallbacks
+      console.error('❌ ResourceManager GitHub scan failed:', error);
+      // Continue without resources - will use fallbacks
     }
   }
 
