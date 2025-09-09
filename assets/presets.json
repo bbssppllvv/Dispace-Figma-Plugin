@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T16:55:33.789Z",
+  "updated": "2025-09-09T16:55:40.343Z",
   "categories": [
     {
       "id": "popular",
@@ -139,6 +139,26 @@
     {
       "id": "block-lll-copy-1757433356971",
       "name": "Block lll (Copy)",
+      "category": "block",
+      "defaultScale": 25,
+      "defaultStrength": 80,
+      "layers": [
+        {
+          "src": "resource://Liniar",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "premium": false,
+      "categories": [
+        "block"
+      ]
+    },
+    {
+      "id": "block-lll-copy-1757433356971-copy-1757436940342",
+      "name": "Block lll (Copy) (Copy)",
       "category": "block",
       "defaultScale": 25,
       "defaultStrength": 80,
