@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T11:17:03.052Z",
+  "updated": "2025-09-09T11:23:56.145Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -63,10 +63,13 @@
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://Group 15419",
+          "src": "resource://321421314123421324",
           "tiling": "tiled",
           "scaleMode": "uniform",
-          "blendMode": "overlay"
+          "blendMode": "overlay",
+          "opacity": 1,
+          "alignX": "center",
+          "alignY": "center"
         }
       ],
       "premium": false
