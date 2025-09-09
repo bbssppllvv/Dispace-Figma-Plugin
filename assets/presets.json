@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:36:45.004Z",
+  "updated": "2025-09-09T14:37:29.592Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -90,25 +90,24 @@
       "premium": false
     },
     {
-      "id": "vertical2",
-      "name": "vertical2",
-      "category": "vertical2",
+      "id": "preset-1757351064314",
+      "name": "New Preset",
+      "category": "New",
       "defaultScale": 32,
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://Frame 4562",
+          "src": "resource://Group 15419",
           "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "alignX": "center",
-          "alignY": "center"
+          "scaleMode": "uniform",
+          "blendMode": "overlay"
         }
       ],
       "premium": false
     },
     {
-      "id": "vertical2-copy-1757428578254",
-      "name": "vertical2 (Copy)",
+      "id": "vertical2",
+      "name": "vertical2",
       "category": "vertical2",
       "defaultScale": 32,
       "defaultStrength": 133,
