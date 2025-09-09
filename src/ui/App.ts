@@ -19,7 +19,7 @@
  * @class App
  */
 
-import { PRESETS, Preset } from "./presets";
+import type { Preset } from "./presets";
 import { initDisplacementEngine, DisplacementEngine } from "./engine";
 import { initTabs } from './components/Tabs';
 import { initPresetGallery, PresetSelectedEvent, MapSelectedEvent, refreshPresetGallery } from "./components/PresetGallery";
@@ -281,10 +281,11 @@ export class App {
   /** Prefetch displacement maps for Popular presets category (background). */
   private async prefetchPopularPresets() {
     try {
-      const popular = PRESETS.filter(p => p.category === 'Popular');
+      const { getPresetsByCategory } = await import('./presets');
+      const popular = await getPresetsByCategory('Popular');
       if (popular.length === 0) return;
       const { buildMapSourceFromPreset } = await import('./utils/maps');
-      const mapSources = popular.map(p => buildMapSourceFromPreset(p));
+      const mapSources = popular.map((p: Preset) => buildMapSourceFromPreset(p));
       // Fire and forget; do not block UI
       this.engine.prefetchMapSources(mapSources).catch(() => {});
     } catch {}
@@ -341,31 +342,9 @@ export class App {
       return;
     }
 
-    const availablePresets = PRESETS;
-    if (availablePresets.length === 0) {
-      console.log('🚫 [SHUFFLE] No presets available');
-      return;
-    }
-
-    console.log('✅ [SHUFFLE] Starting shuffle operation with', availablePresets.length, 'presets');
-    this.startShuffleOperation();
-
-    const randomPreset = availablePresets[Math.floor(Math.random() * availablePresets.length)];
-    this.selectedPreset = randomPreset;
-    console.log('🎯 [SHUFFLE] Selected random preset:', randomPreset.name);
-
-    // Dispatch event for UI feedback
-    console.log('📨 [SHUFFLE] Dispatching preset:randomized event');
-    document.dispatchEvent(new CustomEvent('preset:randomized', {
-      detail: { presetName: randomPreset.name }
-    }));
-
-    // HUD: play disperse effect with randomized preset name
-    this.playDisperseText(randomPreset.name);
-
-    // Start async map loading and batch parameter updates
-    console.log('🚀 [SHUFFLE] Starting performBatchedShuffle');
-    this.performBatchedShuffle(randomPreset);
+    // Temporarily disable randomize for CDN-based presets (async loading required)
+    console.log('🚫 [SHUFFLE] Randomize temporarily disabled for CDN presets');
+    return;
   }
 
   // --- HUD helpers ---

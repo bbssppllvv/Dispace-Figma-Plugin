@@ -195,14 +195,9 @@ export class PresetService {
   }
 
   private async loadFallbackPresets(): Promise<Preset[]> {
-    // Загружаем встроенные пресеты как fallback
-    try {
-      const { PRESETS } = await import('../presets');
-      return PRESETS;
-    } catch (error) {
-      console.warn('Could not load fallback presets:', error);
-      return [];
-    }
+    // Нет fallback пресетов - все загружается с CDN
+    console.warn('No fallback presets available, using empty array');
+    return [];
   }
 
   /**

@@ -97,7 +97,8 @@ export class ResourceManager {
       await this.preloadCriticalResources();
       
     } catch (error) {
-      console.error('❌ ResourceManager GitHub scan failed:', error);
+      console.warn('⚠️ ResourceManager GitHub scan failed (expected in Figma sandbox):', error instanceof Error ? error.message : String(error));
+      console.log('✅ Using direct URL fallback for resources (sandbox mode)');
       // Continue without resources - will use fallbacks
     }
   }
@@ -107,7 +108,7 @@ export class ResourceManager {
    */
   resolveResource(resourceId: string): string | null {
     if (!this.manifest) {
-      console.warn(`No manifest loaded, using direct URL for: ${resourceId}`);
+      // Это нормально в Figma sandbox - используем прямые URL
       // Fallback: прямое построение URL без manifest
       // Обрабатываем файлы с пробелами в именах
       const fileName = resourceId.includes(' ') ? resourceId : `${resourceId}.svg`;
