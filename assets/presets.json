@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:15:22.577Z",
+  "updated": "2025-09-09T14:19:10.594Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -82,7 +82,7 @@
         {
           "src": "resource://diamond-pattern",
           "tiling": "tiled",
-          "scaleMode": "uniform",
+          "scaleMode": "xOnly",
           "alignX": "center",
           "alignY": "center"
         }
@@ -106,36 +106,34 @@
       "premium": false
     },
     {
-      "id": "preset-1757417311252",
-      "name": "New Preset",
-      "category": "neww",
+      "id": "Vertical",
+      "name": "Vertical",
+      "category": "Vertical",
       "defaultScale": 32,
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://321421314123421324",
+          "src": "resource://Frame 4561",
           "tiling": "tiled",
           "scaleMode": "uniform"
         }
       ],
-      "premium": false
+      "premium": true
     },
     {
-      "id": "preset-1757427278153",
-      "name": "New Preset",
-      "category": "Edit",
+      "id": "Vertical",
+      "name": "Vertical",
+      "category": "Vertical",
       "defaultScale": 32,
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://horizontal-bands",
+          "src": "resource://Frame 4561",
           "tiling": "tiled",
-          "scaleMode": "uniform",
-          "alignX": "center",
-          "alignY": "center"
+          "scaleMode": "uniform"
         }
       ],
-      "premium": false
+      "premium": true
     }
   ]
 }
