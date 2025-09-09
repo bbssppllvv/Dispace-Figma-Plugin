@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:25:16.618Z",
+  "updated": "2025-09-09T14:29:56.145Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -128,26 +128,9 @@
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://Frame 4562",
+          "src": "resource://Bezie",
           "tiling": "tiled",
-          "scaleMode": "uniform",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "premium": false
-    },
-    {
-      "id": "vertical2",
-      "name": "vertical2",
-      "category": "vertical2",
-      "defaultScale": 32,
-      "defaultStrength": 133,
-      "layers": [
-        {
-          "src": "resource://Frame 4562",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
+          "scaleMode": "xOnly",
           "alignX": "center",
           "alignY": "center"
         }
