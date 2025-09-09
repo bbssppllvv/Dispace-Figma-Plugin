@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:19:10.594Z",
+  "updated": "2025-09-09T14:20:27.302Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -82,7 +82,7 @@
         {
           "src": "resource://diamond-pattern",
           "tiling": "tiled",
-          "scaleMode": "xOnly",
+          "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
         }
@@ -106,34 +106,53 @@
       "premium": false
     },
     {
-      "id": "Vertical",
-      "name": "Vertical",
-      "category": "Vertical",
+      "id": "preset-1757417311252",
+      "name": "New Preset",
+      "category": "neww",
       "defaultScale": 32,
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://Frame 4561",
+          "src": "resource://321421314123421324",
           "tiling": "tiled",
           "scaleMode": "uniform"
         }
       ],
-      "premium": true
+      "premium": false
     },
     {
-      "id": "Vertical",
-      "name": "Vertical",
-      "category": "Vertical",
+      "id": "vertical",
+      "name": "vertical",
+      "category": "vertical2",
       "defaultScale": 32,
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://Frame 4561",
+          "src": "resource://Frame 4562",
           "tiling": "tiled",
-          "scaleMode": "uniform"
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
         }
       ],
-      "premium": true
+      "premium": false
+    },
+    {
+      "id": "vertical",
+      "name": "vertical",
+      "category": "vertical2",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "layers": [
+        {
+          "src": "resource://Frame 4562",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "premium": false
     }
   ]
 }
