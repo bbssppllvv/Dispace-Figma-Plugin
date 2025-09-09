@@ -1,25 +1,39 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:37:33.419Z",
-  "presets": [
+  "updated": "2025-09-09T14:42:59.900Z",
+  "categories": [
     {
-      "id": "complex-glass",
-      "name": "Complex Glass",
-      "category": "Ribbed glass",
-      "defaultScale": 32,
-      "defaultStrength": 200,
-      "premium": true,
-      "order": 3,
-      "layers": [
-        {
-          "src": "resource://321421314123421324",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ]
+      "id": "popular",
+      "name": "Popular",
+      "order": 1
     },
+    {
+      "id": "ribbed-glass",
+      "name": "Ribbed glass",
+      "order": 2
+    },
+    {
+      "id": "fabric",
+      "name": "Fabric",
+      "order": 3
+    },
+    {
+      "id": "geometric",
+      "name": "Geometric",
+      "order": 4
+    },
+    {
+      "id": "organic",
+      "name": "Organic",
+      "order": 5
+    },
+    {
+      "id": "custom",
+      "name": "Custom",
+      "order": 100
+    }
+  ],
+  "presets": [
     {
       "id": "horizontal-glass",
       "name": "Horizontal Glass",
@@ -36,7 +50,10 @@
           "alignY": "center"
         }
       ],
-      "premium": true
+      "premium": true,
+      "categories": [
+        "ribbed-glass"
+      ]
     },
     {
       "id": "vertical-glass",
@@ -53,12 +70,36 @@
           "alignX": "center",
           "alignY": "center"
         }
+      ],
+      "categories": [
+        "ribbed-glass"
+      ]
+    },
+    {
+      "id": "complex-glass",
+      "name": "Complex Glass",
+      "category": "Ribbed glass",
+      "defaultScale": 32,
+      "defaultStrength": 200,
+      "premium": true,
+      "order": 3,
+      "layers": [
+        {
+          "src": "resource://321421314123421324",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "categories": [
+        "ribbed-glass"
       ]
     },
     {
       "id": "Block ll",
       "name": "Block ll",
-      "category": "Block",
+      "category": "block",
       "defaultScale": 25,
       "defaultStrength": 80,
       "layers": [
@@ -70,12 +111,15 @@
           "alignY": "center"
         }
       ],
-      "premium": false
+      "premium": false,
+      "categories": [
+        "block"
+      ]
     },
     {
       "id": "Block lll",
       "name": "Block lll",
-      "category": "Block",
+      "category": "block",
       "defaultScale": 25,
       "defaultStrength": 80,
       "layers": [
@@ -87,7 +131,10 @@
           "alignY": "center"
         }
       ],
-      "premium": false
+      "premium": false,
+      "categories": [
+        "block"
+      ]
     },
     {
       "id": "vertical2",
@@ -104,7 +151,30 @@
           "alignY": "center"
         }
       ],
-      "premium": false
+      "premium": false,
+      "categories": [
+        "vertical2"
+      ]
+    },
+    {
+      "id": "vertical2-copy-1757428979899",
+      "name": "vertical2 (Copy)",
+      "category": "vertical2",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "layers": [
+        {
+          "src": "resource://Bezie",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "premium": false,
+      "categories": [
+        "vertical2"
+      ]
     }
   ]
 }
