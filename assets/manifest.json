@@ -25,12 +25,19 @@
         "size": 3740,
         "dimensions": { "width": 400, "height": 400 }
       },
-      "group-15419": {
+      "Group 15419": {
         "type": "svg",
         "path": "/displacement-maps/svg/Group 15419.svg",
         "hash": "sha256-jkl012",
         "size": 19700,
         "dimensions": { "width": 800, "height": 600 }
+      },
+      "test-pattern": {
+        "type": "svg",
+        "path": "/displacement-maps/svg/test-pattern.svg",
+        "hash": "sha256-test123",
+        "size": 661,
+        "dimensions": { "width": 200, "height": 200 }
       }
     }
   }

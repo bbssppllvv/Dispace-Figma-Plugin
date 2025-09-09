@@ -45,7 +45,8 @@ export class ResourceManager {
   private readonly MAX_RETRIES = 3;
 
   constructor(
-    private manifestUrl: string = 'https://dispace-figma-assets.vercel.app/manifest.json'
+    private manifestUrl: string = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/manifest.json',
+    private cdnBaseUrl: string = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets'
   ) {}
 
   /**
@@ -105,7 +106,7 @@ export class ResourceManager {
       return null;
     }
 
-    return `${this.manifest.baseUrl}${resource.path}`;
+    return `${this.cdnBaseUrl}${resource.path}`;
   }
 
   /**

@@ -6,7 +6,8 @@
  */
 
 const http = require('http');
-const fs = require('fs');
+const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 
 const PORT = 3001;
@@ -30,6 +31,50 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
     res.end();
+    return;
+  }
+
+  // API endpoint для сохранения пресетов
+  if (req.url === '/api/save-presets' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const presetsData = JSON.parse(body);
+        const presetsPath = path.join(path.dirname(TOOLS_DIR), 'assets', 'presets.json');
+        
+        // Сохраняем файл
+        await fs.writeFile(presetsPath, JSON.stringify(presetsData, null, 2), 'utf8');
+        console.log(`✅ Saved ${presetsData.presets.length} presets to assets/presets.json`);
+        
+        // Автоматически коммитим и пушим
+        const { execSync } = require('child_process');
+        const projectRoot = path.dirname(TOOLS_DIR);
+        
+        execSync('git add assets/presets.json', { cwd: projectRoot });
+        execSync(`git commit -m "feat: update presets via Preset Studio
+
+- ${presetsData.presets.length} presets total
+- Updated: ${new Date().toLocaleString()}
+- Auto-deployed from Preset Studio"`, { cwd: projectRoot });
+        execSync('git push', { cwd: projectRoot });
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          success: true,
+          message: `Saved ${presetsData.presets.length} presets and deployed to GitHub/CDN`,
+          presetCount: presetsData.presets.length
+        }));
+        
+        console.log('🚀 Presets auto-deployed to GitHub → CDN');
+        
+      } catch (error) {
+        console.error('❌ Save presets failed:', error);
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: error.message }));
+      }
+    });
     return;
   }
 
@@ -80,7 +125,7 @@ const server = http.createServer(async (req, res) => {
     filePath = path.join(path.dirname(TOOLS_DIR), fileName);
   }
 
-  fs.readFile(filePath, (err, data) => {
+  fsSync.readFile(filePath, (err, data) => {
     if (err) {
       console.log(`404: ${filePath} (${req.url})`);
       res.writeHead(404);

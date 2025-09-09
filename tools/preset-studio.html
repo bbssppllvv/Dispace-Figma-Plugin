@@ -258,6 +258,7 @@
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
           <input type="text" id="searchPresets" placeholder="Search presets..." 
                  style="flex: 1; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 12px;">
+          <button class="btn" id="refreshPresets" title="Refresh from CDN">🔄</button>
           <button class="btn primary" id="newPreset">+ New</button>
         </div>
         <select id="categoryFilter" style="width: 100%; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 12px;">
@@ -432,8 +433,8 @@
       </div>
       
       <div class="toolbar">
-        <button class="btn accent" id="savePreset">💾 Save Preset</button>
-        <button class="btn" id="exportCode">📋 Copy JSON</button>
+        <button class="btn accent" id="savePreset">💾 Save & Deploy</button>
+        <button class="btn" id="exportCode">📋 Export JSON</button>
       </div>
     </div>
   </div>
@@ -505,6 +506,7 @@
 
       setupEventListeners() {
         document.getElementById('newPreset').addEventListener('click', () => this.createNewPreset());
+        document.getElementById('refreshPresets').addEventListener('click', () => this.forceRefreshPresets());
         document.getElementById('addLayer').addEventListener('click', () => this.addLayer());
         document.getElementById('savePreset').addEventListener('click', () => this.savePreset());
         document.getElementById('exportCode').addEventListener('click', () => this.exportCode());
@@ -527,15 +529,38 @@
           document.getElementById(id).addEventListener('input', () => this.updateCurrentPreset());
         });
         document.getElementById('premiumPreset').addEventListener('change', () => this.updateCurrentPreset());
+
+        // Search and filter
+        document.getElementById('searchPresets').addEventListener('input', (e) => {
+          this.filterPresets(e.target.value, document.getElementById('categoryFilter').value);
+        });
+        document.getElementById('categoryFilter').addEventListener('change', (e) => {
+          this.filterPresets(document.getElementById('searchPresets').value, e.target.value);
+        });
       }
 
-      async loadAssets() {
+      filterPresets(searchTerm, category) {
+        const items = document.querySelectorAll('.preset-item');
+        
+        items.forEach(item => {
+          const name = item.querySelector('.preset-name').textContent.toLowerCase();
+          const meta = item.querySelector('.preset-meta').textContent.toLowerCase();
+          
+          const matchesSearch = !searchTerm || name.includes(searchTerm.toLowerCase()) || meta.includes(searchTerm.toLowerCase());
+          const matchesCategory = !category || meta.includes(category.toLowerCase());
+          
+          item.style.display = (matchesSearch && matchesCategory) ? 'block' : 'none';
+        });
+      }
+
+      async loadAssets(forceRefresh = false) {
         this.elements.assetStatus.textContent = 'Loading...';
         this.elements.assetStatus.className = 'status-indicator loading';
         
         try {
           // Auto-scan GitHub for all SVG files
-          const response = await fetch('https://api.github.com/repos/bbssppllvv/Dispace-Figma-Plugin/contents/assets/displacement-maps/svg');
+          const cacheParam = forceRefresh ? `?ref=main&t=${Date.now()}` : '';
+          const response = await fetch(`https://api.github.com/repos/bbssppllvv/Dispace-Figma-Plugin/contents/assets/displacement-maps/svg${cacheParam}`);
           
           if (response.ok) {
             const files = await response.json();
@@ -558,7 +583,7 @@
             this.elements.assetStatus.textContent = `${this.assets.size} assets`;
             this.elements.assetStatus.className = 'status-indicator success';
             
-            console.log(`✅ Loaded ${this.assets.size} assets from CDN`);
+            console.log(`✅ Loaded ${this.assets.size} assets from ${forceRefresh ? 'GitHub (forced)' : 'GitHub'}`);
           }
         } catch (error) {
           console.error('Failed to load assets:', error);
@@ -567,11 +592,14 @@
         }
       }
 
-      async loadPresets() {
+      async loadPresets(forceRefresh = false) {
         try {
           // Временно используем GitHub raw files вместо CDN
           const githubUrl = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/presets.json';
-          const response = await fetch(githubUrl, { cache: 'no-cache' });
+          const cacheParam = forceRefresh ? `?t=${Date.now()}` : '';
+          const response = await fetch(githubUrl + cacheParam, { 
+            cache: forceRefresh ? 'no-cache' : 'default'
+          });
           
           if (response.ok) {
             const data = await response.json();
@@ -584,10 +612,29 @@
             this.renderPresetList();
             this.elements.presetCount.textContent = `${this.presets.size} presets`;
             
-            console.log(`✅ Loaded ${this.presets.size} presets from CDN`);
+            console.log(`✅ Loaded ${this.presets.size} presets from ${forceRefresh ? 'CDN (forced)' : 'CDN'}`);
           }
         } catch (error) {
           console.error('Failed to load presets:', error);
+        }
+      }
+
+      async forceRefreshPresets() {
+        this.elements.assetStatus.textContent = 'Refreshing...';
+        this.elements.assetStatus.className = 'status-indicator loading';
+        
+        try {
+          await this.loadPresets(true); // Force refresh
+          await this.loadAssets(); // Refresh assets too
+          
+          this.elements.assetStatus.textContent = `${this.assets.size} assets`;
+          this.elements.assetStatus.className = 'status-indicator success';
+          
+          console.log('✅ Force refresh completed');
+        } catch (error) {
+          console.error('Force refresh failed:', error);
+          this.elements.assetStatus.textContent = 'Refresh failed';
+          this.elements.assetStatus.className = 'status-indicator';
         }
       }
 
@@ -733,7 +780,52 @@
                 <option value="overlay" ${layer.blendMode === 'overlay' ? 'selected' : ''}>Overlay</option>
                 <option value="multiply" ${layer.blendMode === 'multiply' ? 'selected' : ''}>Multiply</option>
                 <option value="screen" ${layer.blendMode === 'screen' ? 'selected' : ''}>Screen</option>
+                <option value="color-burn" ${layer.blendMode === 'color-burn' ? 'selected' : ''}>Color Burn</option>
+                <option value="hard-light" ${layer.blendMode === 'hard-light' ? 'selected' : ''}>Hard Light</option>
+                <option value="soft-light" ${layer.blendMode === 'soft-light' ? 'selected' : ''}>Soft Light</option>
               </select>
+            </div>
+          </div>
+          
+          <!-- Advanced Layer Controls (как в engine) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <div class="form-group">
+              <label class="form-label">Opacity</label>
+              <input type="range" class="form-input" min="0" max="100" value="${(layer.opacity || 1) * 100}" 
+                     onchange="studio.updateLayer(${index}, 'opacity', this.value / 100)" 
+                     style="height: 6px; padding: 0;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Align X</label>
+              <select class="form-select" onchange="studio.updateLayer(${index}, 'alignX', this.value)">
+                <option value="left" ${layer.alignX === 'left' ? 'selected' : ''}>Left</option>
+                <option value="center" ${layer.alignX === 'center' ? 'selected' : ''}>Center</option>
+                <option value="right" ${layer.alignX === 'right' ? 'selected' : ''}>Right</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Align Y</label>
+              <select class="form-select" onchange="studio.updateLayer(${index}, 'alignY', this.value)">
+                <option value="top" ${layer.alignY === 'top' ? 'selected' : ''}>Top</option>
+                <option value="center" ${layer.alignY === 'center' ? 'selected' : ''}>Center</option>
+                <option value="bottom" ${layer.alignY === 'bottom' ? 'selected' : ''}>Bottom</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Offset Controls -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <div class="form-group">
+              <label class="form-label">Offset X (px)</label>
+              <input type="number" class="form-input" value="${layer.offsetX || 0}" 
+                     onchange="studio.updateLayer(${index}, 'offsetX', parseInt(this.value))" 
+                     style="font-size: 12px; padding: 4px 6px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Offset Y (px)</label>
+              <input type="number" class="form-input" value="${layer.offsetY || 0}" 
+                     onchange="studio.updateLayer(${index}, 'offsetY', parseInt(this.value))" 
+                     style="font-size: 12px; padding: 4px 6px;">
             </div>
           </div>
         `;
@@ -906,38 +998,41 @@
       }
 
       async generateDisplacementTexture(scalePct) {
-        console.log('🗺️ Generating Canvas displacement texture (like in plugin)...');
+        console.log('🗺️ Generating Canvas displacement texture (EXACT engine pipeline)...');
         
         const canvas = document.createElement('canvas');
         canvas.width = 400;
         canvas.height = 300;
         const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
         
         // Clear canvas
         ctx.clearRect(0, 0, 400, 300);
         
-        // Используем локальные SVG файлы для избежания CORS
+        // Загружаем и рендерим слои (точно как в FilterRenderer)
         const layers = this.currentPreset.layers || [];
         
         for (const layer of layers) {
           if (!layer.src || !layer.src.startsWith('resource://')) continue;
           
           const assetId = layer.src.replace('resource://', '');
+          const asset = this.assets.get(assetId);
+          if (!asset) continue;
           
-          // Создаем простую тестовую текстуру для каждого типа
-          let testTexture;
-          if (assetId.includes('horizontal')) {
-            testTexture = this.createHorizontalGradient();
-          } else if (assetId.includes('vertical')) {
-            testTexture = this.createVerticalGradient();
-          } else {
-            testTexture = this.createRadialGradient();
+          try {
+            // Загружаем реальное изображение с CDN (как в engine)
+            const img = await this.loadImageForCanvas(asset.url);
+            
+            // Рендерим слой с ПОЛНЫМИ параметрами (как в FilterRenderer.drawLayer)
+            await this.drawLayerWithFullParams(ctx, 400, 300, img, layer, scalePct);
+            
+            console.log(`✅ Drew layer: ${asset.name} (real CDN asset)`);
+          } catch (error) {
+            console.warn(`Failed to load layer ${asset.name}:`, error);
+            // Fallback на сгенерированную текстуру
+            const fallbackTexture = this.createFallbackTexture(assetId);
+            await this.drawLayerWithFullParams(ctx, 400, 300, fallbackTexture, layer, scalePct);
           }
-          
-          // Рисуем tiled текстуру
-          await this.drawTiledTexture(ctx, 400, 300, testTexture, scalePct, layer);
-          
-          console.log(`✅ Drew layer: ${assetId} (generated texture)`);
         }
         
         // Если нет слоев, создаем нейтральную текстуру
@@ -951,6 +1046,97 @@
         if (this.elements.feImg) {
           this.elements.feImg.setAttribute('href', dataUrl);
           console.log('✅ Updated feImg with Canvas-generated displacement texture');
+        }
+      }
+
+      async loadImageForCanvas(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error('Failed to load ' + url));
+          img.src = url;
+        });
+      }
+
+      async drawLayerWithFullParams(ctx, canvasW, canvasH, image, layer, globalScalePct) {
+        // Точная копия FilterRenderer.drawLayer логики
+        ctx.save();
+        
+        // Применяем opacity и blend mode
+        const opacity = typeof layer.opacity === 'number' ? layer.opacity : 1;
+        const blendMode = layer.blendMode || 'source-over';
+        
+        ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
+        ctx.globalCompositeOperation = blendMode;
+        
+        if (layer.tiling === 'tiled') {
+          // Используем scale слоя или глобальный scale
+          const layerScale = typeof layer.scale === 'number' ? layer.scale : globalScalePct;
+          const scale = layerScale * 0.01;
+          
+          await this.drawTiledWithAlignment(ctx, canvasW, canvasH, image, scale, layer);
+        } else {
+          // Stretched mode с учетом offset
+          const offsetX = layer.offsetX || 0;
+          const offsetY = layer.offsetY || 0;
+          
+          if (offsetX !== 0 || offsetY !== 0) {
+            ctx.translate(offsetX, offsetY);
+          }
+          ctx.drawImage(image, 0, 0, canvasW, canvasH);
+        }
+        
+        ctx.restore();
+      }
+
+      async drawTiledWithAlignment(ctx, canvasW, canvasH, image, scale, layer) {
+        // Точная копия FilterRenderer.drawTiledMap с alignment
+        let w = Math.max(1, image.width * scale);
+        let h = Math.max(1, image.height * scale);
+        
+        const scaleMode = layer.scaleMode || 'uniform';
+        if (scaleMode === 'xOnly') h = canvasH;
+        else if (scaleMode === 'yOnly') w = canvasW;
+        
+        // Alignment calculation (как в engine)
+        let originX = 0, originY = 0;
+        const alignX = layer.alignX || 'left';
+        const alignY = layer.alignY || 'top';
+        
+        if (alignX === 'center') originX = Math.floor((canvasW - w) / 2);
+        else if (alignX === 'right') originX = canvasW - w;
+        if (alignY === 'center') originY = Math.floor((canvasH - h) / 2);
+        else if (alignY === 'bottom') originY = canvasH - h;
+        
+        // Add offset
+        originX += (layer.offsetX || 0);
+        originY += (layer.offsetY || 0);
+        
+        // Tiling (точная копия из FilterRenderer)
+        const startI = Math.floor((0 - originX) / w) - 1;
+        const startJ = Math.floor((0 - originY) / h) - 1;
+        const endI = Math.ceil((canvasW - originX) / w) + 1;
+        const endJ = Math.ceil((canvasH - originY) / h) + 1;
+        
+        for (let i = startI; i <= endI; i++) {
+          for (let j = startJ; j <= endJ; j++) {
+            const x = originX + i * w;
+            const y = originY + j * h;
+            if (x > canvasW || y > canvasH || x + w < 0 || y + h < 0) continue;
+            ctx.drawImage(image, x, y, w, h);
+          }
+        }
+      }
+
+      createFallbackTexture(assetId) {
+        // Fallback текстуры если CDN недоступен
+        if (assetId.includes('horizontal')) {
+          return this.createHorizontalGradient();
+        } else if (assetId.includes('vertical')) {
+          return this.createVerticalGradient();
+        } else {
+          return this.createRadialGradient();
         }
       }
 
@@ -1005,40 +1191,6 @@
         return canvas;
       }
 
-      async drawTiledTexture(ctx, canvasW, canvasH, textureCanvas, scalePct, layer) {
-        const scale = scalePct * 0.01;
-        let w = Math.max(1, textureCanvas.width * scale);
-        let h = Math.max(1, textureCanvas.height * scale);
-        
-        const scaleMode = layer.scaleMode || 'uniform';
-        if (scaleMode === 'xOnly') h = canvasH;
-        else if (scaleMode === 'yOnly') w = canvasW;
-        
-        // Alignment
-        let originX = 0, originY = 0;
-        const alignX = layer.alignX || 'center';
-        const alignY = layer.alignY || 'center';
-        
-        if (alignX === 'center') originX = Math.floor((canvasW - w) / 2);
-        else if (alignX === 'right') originX = canvasW - w;
-        if (alignY === 'center') originY = Math.floor((canvasH - h) / 2);
-        else if (alignY === 'bottom') originY = canvasH - h;
-        
-        // Tiling (как в FilterRenderer)
-        const startI = Math.floor((0 - originX) / w) - 1;
-        const startJ = Math.floor((0 - originY) / h) - 1;
-        const endI = Math.ceil((canvasW - originX) / w) + 1;
-        const endJ = Math.ceil((canvasH - originY) / h) + 1;
-        
-        for (let i = startI; i <= endI; i++) {
-          for (let j = startJ; j <= endJ; j++) {
-            const x = originX + i * w;
-            const y = originY + j * h;
-            if (x > canvasW || y > canvasH || x + w < 0 || y + h < 0) continue;
-            ctx.drawImage(textureCanvas, x, y, w, h);
-          }
-        }
-      }
 
       resetDisplacementScales() {
         // Reset все displacement scales к 0
@@ -1051,7 +1203,7 @@
 
 
 
-      savePreset() {
+      async savePreset() {
         if (!this.currentPreset) return;
 
         // Update preset in memory
@@ -1072,32 +1224,49 @@
 
         const output = JSON.stringify(manifest, null, 2);
         
-        // Auto-copy to clipboard
-        navigator.clipboard.writeText(output).then(() => {
-          alert('✅ Preset saved and copied to clipboard!\n\nRun: npm run preset:save');
-        }).catch(() => {
-          // Fallback: show in modal
-          const textarea = document.createElement('textarea');
-          textarea.value = output;
-          textarea.style.width = '100%';
-          textarea.style.height = '300px';
-          textarea.style.fontFamily = 'monospace';
-          textarea.style.fontSize = '12px';
+        try {
+          // Прямое сохранение через API сервера
+          const response = await fetch('/api/save-presets', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: output
+          });
           
-          const modal = document.createElement('div');
-          modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:2000';
-          modal.innerHTML = `
-            <div style="background:var(--panel);padding:24px;border-radius:12px;width:80%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">
-              <h3 style="margin-bottom:16px">Copy this JSON to assets/presets.json:</h3>
-              <textarea readonly style="flex:1;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:monospace;font-size:12px">${output}</textarea>
-              <button onclick="this.parentElement.parentElement.remove()" style="padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--primary);color:white;cursor:pointer">Close</button>
-            </div>
-          `;
+          if (response.ok) {
+            const result = await response.json();
+            
+            // Автоматически перезагружаем пресеты в Studio
+            setTimeout(() => {
+              this.loadPresets();
+            }, 1000);
+            
+            alert(`✅ Preset saved and deployed!\n\n${result.message}\n\nPresets refreshed automatically.`);
+          } else {
+            throw new Error(`Server error: ${response.status}`);
+          }
+        } catch (error) {
+          console.error('Direct save failed:', error);
           
-          document.body.appendChild(modal);
-        });
+          // Fallback: download файл для ручного сохранения
+          this.downloadPresetsFile(output);
+          alert('⚠️ Auto-save failed. File downloaded.\n\nManually save as assets/presets.json and git push.');
+        }
 
         console.log('💾 Preset saved:', this.currentPreset);
+      }
+
+      downloadPresetsFile(content) {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'presets.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
 
       exportCode() {

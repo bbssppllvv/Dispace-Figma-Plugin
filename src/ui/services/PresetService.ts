@@ -18,7 +18,7 @@ export class PresetService {
   private isLoaded = false;
   private loadPromise: Promise<void> | null = null;
   
-  private readonly CDN_PRESETS_URL = 'https://dispace-figma-assets.vercel.app/presets.json';
+  private readonly CDN_PRESETS_URL = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/presets.json';
   private readonly CACHE_KEY = 'displace_presets_cache';
   private readonly CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
@@ -233,7 +233,7 @@ export class PresetService {
    * Принудительно обновить пресеты
    */
   async refreshPresets(): Promise<Preset[]> {
-    localStorage.removeItem(this.CACHE_KEY);
+    this.clearStorageItem(this.CACHE_KEY);
     this.isLoaded = false;
     this.loadPromise = null;
     return this.loadPresets();
@@ -243,7 +243,7 @@ export class PresetService {
    * Очистить кэш
    */
   clearCache(): void {
-    localStorage.removeItem(this.CACHE_KEY);
+    this.clearStorageItem(this.CACHE_KEY);
     this.isLoaded = false;
     this.loadPromise = null;
   }
