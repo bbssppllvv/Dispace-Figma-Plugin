@@ -107,8 +107,14 @@ export class ResourceManager {
    */
   resolveResource(resourceId: string): string | null {
     if (!this.manifest) {
-      console.warn(`No manifest loaded, cannot resolve: ${resourceId}`);
-      return null;
+      console.warn(`No manifest loaded, using direct URL for: ${resourceId}`);
+      // Fallback: прямое построение URL без manifest
+      // Обрабатываем файлы с пробелами в именах
+      const fileName = resourceId.includes(' ') ? resourceId : `${resourceId}.svg`;
+      if (!fileName.endsWith('.svg')) {
+        return `${this.cdnBaseUrl}/displacement-maps/svg/${fileName}.svg`;
+      }
+      return `${this.cdnBaseUrl}/displacement-maps/svg/${fileName}`;
     }
 
     // Parse resource://category/id or resource://id format
