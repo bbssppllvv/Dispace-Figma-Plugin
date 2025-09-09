@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T12:44:29.562Z",
+  "updated": "2025-09-09T12:45:00.259Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -59,7 +59,7 @@
       "id": "Block ll",
       "name": "Block ll",
       "category": "Block",
-      "defaultScale": 50,
+      "defaultScale": 25,
       "defaultStrength": 80,
       "layers": [
         {
