@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:36:03.880Z",
+  "updated": "2025-09-09T14:36:10.563Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -85,22 +85,6 @@
           "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
-        }
-      ],
-      "premium": false
-    },
-    {
-      "id": "preset-1757351064314",
-      "name": "New Preset",
-      "category": "New",
-      "defaultScale": 32,
-      "defaultStrength": 133,
-      "layers": [
-        {
-          "src": "resource://Group 15419",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "blendMode": "overlay"
         }
       ],
       "premium": false
