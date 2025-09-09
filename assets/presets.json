@@ -1,39 +1,28 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:42:59.900Z",
-  "categories": [
-    {
-      "id": "popular",
-      "name": "Popular",
-      "order": 1
-    },
-    {
-      "id": "ribbed-glass",
-      "name": "Ribbed glass",
-      "order": 2
-    },
-    {
-      "id": "fabric",
-      "name": "Fabric",
-      "order": 3
-    },
-    {
-      "id": "geometric",
-      "name": "Geometric",
-      "order": 4
-    },
-    {
-      "id": "organic",
-      "name": "Organic",
-      "order": 5
-    },
-    {
-      "id": "custom",
-      "name": "Custom",
-      "order": 100
-    }
-  ],
+  "updated": "2025-09-09T14:43:08.737Z",
   "presets": [
+    {
+      "id": "complex-glass",
+      "name": "Complex Glass",
+      "category": "Ribbed glass",
+      "defaultScale": 32,
+      "defaultStrength": 200,
+      "premium": true,
+      "order": 3,
+      "layers": [
+        {
+          "src": "resource://321421314123421324",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "categories": [
+        "ribbed-glass"
+      ]
+    },
     {
       "id": "horizontal-glass",
       "name": "Horizontal Glass",
@@ -67,27 +56,6 @@
           "src": "resource://321421314123421324",
           "tiling": "tiled",
           "scaleMode": "yOnly",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "categories": [
-        "ribbed-glass"
-      ]
-    },
-    {
-      "id": "complex-glass",
-      "name": "Complex Glass",
-      "category": "Ribbed glass",
-      "defaultScale": 32,
-      "defaultStrength": 200,
-      "premium": true,
-      "order": 3,
-      "layers": [
-        {
-          "src": "resource://321421314123421324",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
         }
@@ -164,7 +132,7 @@
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://Bezie",
+          "src": "resource://Frame 4563",
           "tiling": "tiled",
           "scaleMode": "xOnly",
           "alignX": "center",
