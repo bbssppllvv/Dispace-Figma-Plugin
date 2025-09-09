@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T13:57:10.099Z",
+  "updated": "2025-09-09T14:07:42.537Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -82,7 +82,7 @@
         {
           "src": "resource://diamond-pattern",
           "tiling": "tiled",
-          "scaleMode": "uniform",
+          "scaleMode": "xOnly",
           "alignX": "center",
           "alignY": "center"
         }
