@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-09-09T18:42:49.544Z",
+  "updated": "2025-09-09T18:48:55.498Z",
   "categories": [
     {
       "id": "popular",
@@ -179,6 +179,26 @@
     {
       "id": "block-lll-copy-1757433356971-copy-1757437070616-copy-1757443365073",
       "name": "Block lll (Copy) (Copy) (Copy)",
+      "category": "block",
+      "defaultScale": 25,
+      "defaultStrength": 80,
+      "layers": [
+        {
+          "src": "resource://diamond-pattern",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "premium": false,
+      "categories": [
+        "block"
+      ]
+    },
+    {
+      "id": "block-lll-copy-1757433356971-copy-1757437070616-copy-1757443365073-copy-1757443735494",
+      "name": "Block lll (Copy) (Copy) (Copy) (Copy)",
       "category": "block",
       "defaultScale": 25,
       "defaultStrength": 80,
