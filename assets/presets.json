@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:36:18.256Z",
+  "updated": "2025-09-09T14:36:45.004Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -97,7 +97,7 @@
       "defaultStrength": 133,
       "layers": [
         {
-          "src": "resource://Bezie",
+          "src": "resource://Frame 4562",
           "tiling": "tiled",
           "scaleMode": "xOnly",
           "alignX": "center",
