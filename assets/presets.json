@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T16:55:43.342Z",
+  "updated": "2025-09-09T16:57:16.327Z",
   "categories": [
     {
       "id": "popular",
@@ -144,7 +144,7 @@
       "defaultStrength": 80,
       "layers": [
         {
-          "src": "resource://Liniar",
+          "src": "resource://diamond-pattern",
           "tiling": "tiled",
           "scaleMode": "uniform",
           "alignX": "center",
@@ -157,14 +157,14 @@
       ]
     },
     {
-      "id": "block-lll-copy-1757433356971-copy-1757436940342",
+      "id": "block-lll-copy-1757433356971-copy-1757437036325",
       "name": "Block lll (Copy) (Copy)",
       "category": "block",
       "defaultScale": 25,
       "defaultStrength": 80,
       "layers": [
         {
-          "src": "resource://Liniar",
+          "src": "resource://diamond-pattern",
           "tiling": "tiled",
           "scaleMode": "uniform",
           "alignX": "center",
