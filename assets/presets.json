@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:36:10.563Z",
+  "updated": "2025-09-09T14:36:18.256Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -92,6 +92,23 @@
     {
       "id": "vertical2",
       "name": "vertical2",
+      "category": "vertical2",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "layers": [
+        {
+          "src": "resource://Bezie",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "premium": false
+    },
+    {
+      "id": "vertical2-copy-1757428578254",
+      "name": "vertical2 (Copy)",
       "category": "vertical2",
       "defaultScale": 32,
       "defaultStrength": 133,
