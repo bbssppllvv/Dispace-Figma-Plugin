@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T15:04:02.984Z",
+  "updated": "2025-09-09T15:55:24.828Z",
   "categories": [
     {
       "id": "popular",
@@ -179,6 +179,26 @@
     {
       "id": "vertical2-copy-1757428979899-copy-1757430242983",
       "name": "vertical2 (Copy) (Copy)",
+      "category": "vertical2",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "layers": [
+        {
+          "src": "resource://Frame 4563",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "premium": false,
+      "categories": [
+        "vertical2"
+      ]
+    },
+    {
+      "id": "vertical2-copy-1757428979899-copy-1757430242983-copy-1757433324825",
+      "name": "vertical2 (Copy) (Copy) (Copy)",
       "category": "vertical2",
       "defaultScale": 32,
       "defaultStrength": 133,
