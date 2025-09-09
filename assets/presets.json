@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:29:56.145Z",
+  "updated": "2025-09-09T14:36:03.880Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -101,21 +101,6 @@
           "tiling": "tiled",
           "scaleMode": "uniform",
           "blendMode": "overlay"
-        }
-      ],
-      "premium": false
-    },
-    {
-      "id": "preset-1757417311252",
-      "name": "New Preset",
-      "category": "neww",
-      "defaultScale": 32,
-      "defaultStrength": 133,
-      "layers": [
-        {
-          "src": "resource://321421314123421324",
-          "tiling": "tiled",
-          "scaleMode": "uniform"
         }
       ],
       "premium": false
