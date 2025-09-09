@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T13:55:02.334Z",
+  "updated": "2025-09-09T13:56:56.470Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -64,6 +64,23 @@
       "layers": [
         {
           "src": "resource://321421314123421324",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "premium": false
+    },
+    {
+      "id": "Block lll",
+      "name": "Block ll",
+      "category": "Block",
+      "defaultScale": 25,
+      "defaultStrength": 80,
+      "layers": [
+        {
+          "src": "resource://diamond-pattern",
           "tiling": "tiled",
           "scaleMode": "uniform",
           "alignX": "center",
