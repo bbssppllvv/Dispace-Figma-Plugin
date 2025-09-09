@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-09-09T14:07:42.537Z",
+  "updated": "2025-09-09T14:15:22.577Z",
   "presets": [
     {
       "id": "complex-glass",
@@ -82,7 +82,7 @@
         {
           "src": "resource://diamond-pattern",
           "tiling": "tiled",
-          "scaleMode": "xOnly",
+          "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
         }
@@ -116,6 +116,23 @@
           "src": "resource://321421314123421324",
           "tiling": "tiled",
           "scaleMode": "uniform"
+        }
+      ],
+      "premium": false
+    },
+    {
+      "id": "preset-1757427278153",
+      "name": "New Preset",
+      "category": "Edit",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "layers": [
+        {
+          "src": "resource://horizontal-bands",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
         }
       ],
       "premium": false
