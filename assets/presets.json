@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T16:19:27.431Z",
+  "updated": "2025-11-23T16:22:31.201Z",
   "categories": [
     {
       "id": "popular",
@@ -88,7 +88,7 @@
       "soft": 0,
       "dissolveStrength": 0,
       "grain": 100,
-      "grainSize": 100
+      "grainSize": 89
     },
     {
       "id": "vertical-glass",
