@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T16:43:28.776Z",
+  "updated": "2025-11-23T16:43:37.981Z",
   "categories": [
     {
       "id": "popular",
@@ -140,18 +140,19 @@
         "ribbed-glass",
         "popular"
       ],
-      "category": "Custom",
+      "category": "Ribbed glass",
       "defaultScale": 32,
       "defaultStrength": 133,
       "chromaticAberration": 0,
       "blur": 0,
       "soft": 0,
       "dissolveStrength": 0,
-      "grain": 0,
-      "grainSize": 50,
+      "grain": 50,
+      "grainSize": 20,
       "reflectOpacity": 0,
       "reflectSharpness": 0,
-      "layers": []
+      "layers": [],
+      "premium": false
     },
     {
       "id": "block-ll",
