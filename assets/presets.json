@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T16:43:37.981Z",
+  "updated": "2025-11-23T16:44:07.733Z",
   "categories": [
     {
       "id": "popular",
@@ -151,7 +151,13 @@
       "grainSize": 20,
       "reflectOpacity": 0,
       "reflectSharpness": 0,
-      "layers": [],
+      "layers": [
+        {
+          "src": "resource://Frame 4561",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
+        }
+      ],
       "premium": false
     },
     {
