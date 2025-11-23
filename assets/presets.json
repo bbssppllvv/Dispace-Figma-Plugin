@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T17:02:05.416Z",
+  "updated": "2025-11-23T17:02:18.340Z",
   "categories": [
     {
       "id": "popular",
@@ -134,7 +134,8 @@
       "id": "new-preset-1763917313845",
       "name": "New Presetefsdg33242",
       "categories": [
-        "custom"
+        "ribbed-glass",
+        "popular"
       ],
       "category": "Custom",
       "defaultScale": 32,
@@ -147,7 +148,13 @@
       "grainSize": 50,
       "reflectOpacity": 0,
       "reflectSharpness": 0,
-      "layers": [],
+      "layers": [
+        {
+          "src": "resource://321421314123421324",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
+        }
+      ],
       "premium": false
     },
     {
