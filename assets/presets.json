@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T16:45:32.313Z",
+  "updated": "2025-11-23T16:45:39.684Z",
   "categories": [
     {
       "id": "popular",
@@ -61,36 +61,6 @@
       "dissolveStrength": 0,
       "grain": 100,
       "grainSize": 100
-    },
-    {
-      "id": "horizontal-glass-copy-176391473446",
-      "name": "Horizontal Glass (CopyCopyCopyCopy)",
-      "category": "Ribbed glass",
-      "defaultScale": 32,
-      "defaultStrength": 133,
-      "order": 1,
-      "layers": [
-        {
-          "src": "resource://Group 15419",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "alignX": "center",
-          "alignY": "center",
-          "opacity": 1
-        }
-      ],
-      "premium": false,
-      "categories": [
-        "ribbed-glass"
-      ],
-      "chromaticAberration": 0,
-      "blur": 0,
-      "soft": 0,
-      "dissolveStrength": 0,
-      "grain": 100,
-      "grainSize": 100,
-      "reflectOpacity": 0,
-      "reflectSharpness": 0
     },
     {
       "id": "vertical-glass",
