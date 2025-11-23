@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T16:46:14.921Z",
+  "updated": "2025-11-23T17:02:05.416Z",
   "categories": [
     {
       "id": "popular",
@@ -128,6 +128,26 @@
           "scaleMode": "uniform"
         }
       ],
+      "premium": false
+    },
+    {
+      "id": "new-preset-1763917313845",
+      "name": "New Presetefsdg33242",
+      "categories": [
+        "custom"
+      ],
+      "category": "Custom",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "chromaticAberration": 0,
+      "blur": 0,
+      "soft": 0,
+      "dissolveStrength": 0,
+      "grain": 100,
+      "grainSize": 50,
+      "reflectOpacity": 0,
+      "reflectSharpness": 0,
+      "layers": [],
       "premium": false
     },
     {
