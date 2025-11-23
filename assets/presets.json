@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T15:58:14.418Z",
+  "updated": "2025-11-23T15:58:15.578Z",
   "categories": [
     {
       "id": "popular",
@@ -43,17 +43,24 @@
       "order": 1,
       "layers": [
         {
-          "src": "resource://horizontal-bands",
+          "src": "resource://Group 15419",
           "tiling": "tiled",
-          "scaleMode": "xOnly",
+          "scaleMode": "uniform",
           "alignX": "center",
-          "alignY": "center"
+          "alignY": "center",
+          "opacity": 1
         }
       ],
       "premium": true,
       "categories": [
         "ribbed-glass"
-      ]
+      ],
+      "chromaticAberration": 0,
+      "blur": 0,
+      "soft": 0,
+      "dissolveStrength": 0,
+      "grain": 100,
+      "grainSize": 100
     },
     {
       "id": "vertical-glass",
