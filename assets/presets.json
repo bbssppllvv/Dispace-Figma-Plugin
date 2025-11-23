@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T16:45:39.684Z",
+  "updated": "2025-11-23T16:45:54.928Z",
   "categories": [
     {
       "id": "popular",
@@ -102,6 +102,27 @@
       "categories": [
         "ribbed-glass"
       ]
+    },
+    {
+      "id": "new-preset-1763916342626",
+      "name": "New Preset2222",
+      "categories": [
+        "ribbed-glass",
+        "popular"
+      ],
+      "category": "Custom",
+      "defaultScale": 32,
+      "defaultStrength": 133,
+      "chromaticAberration": 0,
+      "blur": 0,
+      "soft": 0,
+      "dissolveStrength": 0,
+      "grain": 0,
+      "grainSize": 50,
+      "reflectOpacity": 0,
+      "reflectSharpness": 0,
+      "layers": [],
+      "premium": false
     },
     {
       "id": "block-ll",
