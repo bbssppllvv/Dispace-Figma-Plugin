@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T18:23:13.040Z",
+  "updated": "2025-11-23T18:23:27.433Z",
   "categories": [
     {
       "id": "popular",
@@ -176,7 +176,12 @@
       "reflectSharpness": 0,
       "layers": [
         {
-          "src": "resource://Group 15419",
+          "src": "resource://Liniar",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
+        },
+        {
+          "src": "resource://Frame 4562",
           "tiling": "tiled",
           "scaleMode": "uniform"
         }
