@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T16:22:31.201Z",
+  "updated": "2025-11-23T16:22:47.912Z",
   "categories": [
     {
       "id": "popular",
@@ -79,7 +79,7 @@
           "opacity": 1
         }
       ],
-      "premium": true,
+      "premium": false,
       "categories": [
         "ribbed-glass"
       ],
@@ -88,7 +88,7 @@
       "soft": 0,
       "dissolveStrength": 0,
       "grain": 100,
-      "grainSize": 89
+      "grainSize": 100
     },
     {
       "id": "vertical-glass",
