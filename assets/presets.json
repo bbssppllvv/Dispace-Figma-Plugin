@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T18:27:45.098Z",
+  "updated": "2025-11-23T18:28:01.399Z",
   "categories": [
     {
       "id": "popular",
@@ -125,13 +125,17 @@
         {
           "src": "resource://Liniar",
           "tiling": "tiled",
-          "scaleMode": "xOnly"
+          "scaleMode": "xOnly",
+          "alignX": "center",
+          "alignY": "center"
         },
         {
           "src": "resource://Frame 4562",
           "tiling": "tiled",
           "scaleMode": "yOnly",
-          "blendMode": "overlay"
+          "blendMode": "overlay",
+          "alignX": "center",
+          "alignY": "center"
         }
       ],
       "premium": false
