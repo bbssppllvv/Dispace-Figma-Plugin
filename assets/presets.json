@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T15:55:31.664Z",
+  "updated": "2025-11-23T15:57:56.546Z",
   "categories": [
     {
       "id": "popular",
@@ -43,7 +43,7 @@
       "order": 1,
       "layers": [
         {
-          "src": "resource://Liniar",
+          "src": "resource://horizontal-bands",
           "tiling": "tiled",
           "scaleMode": "xOnly",
           "alignX": "center",
@@ -53,13 +53,7 @@
       "premium": true,
       "categories": [
         "ribbed-glass"
-      ],
-      "chromaticAberration": 0,
-      "blur": 0,
-      "soft": 0,
-      "dissolveStrength": 0,
-      "grain": 100,
-      "grainSize": 100
+      ]
     },
     {
       "id": "vertical-glass",
