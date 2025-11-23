@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T16:23:05.527Z",
+  "updated": "2025-11-23T16:23:53.108Z",
   "categories": [
     {
       "id": "popular",
@@ -64,7 +64,7 @@
     },
     {
       "id": "horizontal-glass-copy-1763914734466",
-      "name": "Horizontal Glass (Copy)",
+      "name": "Horizontal Glass (CopyCopyCopyCopy)",
       "category": "Ribbed glass",
       "defaultScale": 32,
       "defaultStrength": 133,
@@ -88,7 +88,9 @@
       "soft": 0,
       "dissolveStrength": 0,
       "grain": 100,
-      "grainSize": 100
+      "grainSize": 100,
+      "reflectOpacity": 0,
+      "reflectSharpness": 0
     },
     {
       "id": "vertical-glass",
