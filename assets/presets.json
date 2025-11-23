@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-23T18:23:04.006Z",
+  "updated": "2025-11-23T18:23:13.040Z",
   "categories": [
     {
       "id": "popular",
@@ -174,7 +174,13 @@
       "grainSize": 0,
       "reflectOpacity": 0,
       "reflectSharpness": 0,
-      "layers": [],
+      "layers": [
+        {
+          "src": "resource://Group 15419",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
+        }
+      ],
       "premium": false
     },
     {
