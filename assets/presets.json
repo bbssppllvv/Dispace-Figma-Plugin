@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:14:02.292Z",
+  "updated": "2025-11-24T15:14:26.182Z",
   "categories": [
     {
       "id": "popular",
@@ -162,7 +162,7 @@
         {
           "src": "resource://Frame 4562",
           "tiling": "tiled",
-          "scaleMode": "uniform",
+          "scaleMode": "yOnly",
           "alignX": "center"
         }
       ],
