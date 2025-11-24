@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:16:34.404Z",
+  "updated": "2025-11-24T15:16:39.142Z",
   "categories": [
     {
       "id": "popular",
@@ -140,7 +140,7 @@
         }
       ],
       "premium": false,
-      "textureScale": 1
+      "textureScale": 0.4
     },
     {
       "id": "new-preset-1763916342626",
