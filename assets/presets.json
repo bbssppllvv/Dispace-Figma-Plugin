@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T14:17:31.791Z",
+  "updated": "2025-11-24T14:17:51.417Z",
   "categories": [
     {
       "id": "popular",
@@ -190,13 +190,13 @@
           "src": "resource://523526",
           "tiling": "tiled",
           "scaleMode": "uniform",
-          "opacity": 0.95,
+          "opacity": 1,
           "alignX": "center",
           "alignY": "center"
         }
       ],
       "premium": false,
-      "textureScale": 0.2
+      "textureScale": 0.1
     },
     {
       "id": "block-ll",
