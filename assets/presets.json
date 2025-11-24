@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T14:04:52.224Z",
+  "updated": "2025-11-24T14:05:27.370Z",
   "categories": [
     {
       "id": "popular",
@@ -194,7 +194,8 @@
         {
           "src": "resource://test-pattern",
           "tiling": "tiled",
-          "scaleMode": "uniform"
+          "scaleMode": "uniform",
+          "blendMode": "overlay"
         }
       ],
       "premium": false
