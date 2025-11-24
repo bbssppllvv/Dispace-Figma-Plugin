@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:13:38.480Z",
+  "updated": "2025-11-24T15:13:48.978Z",
   "categories": [
     {
       "id": "popular",
@@ -148,8 +148,8 @@
         "popular"
       ],
       "category": "Ribbed glass",
-      "defaultScale": 32,
-      "defaultStrength": 133,
+      "defaultScale": 100,
+      "defaultStrength": 150,
       "chromaticAberration": 0,
       "blur": 0,
       "soft": 0,
@@ -166,7 +166,8 @@
           "alignX": "center"
         }
       ],
-      "premium": false
+      "premium": false,
+      "textureScale": 1
     },
     {
       "id": "new-preset-1763917313845",
