@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T13:57:47.928Z",
+  "updated": "2025-11-24T14:04:52.224Z",
   "categories": [
     {
       "id": "popular",
@@ -188,6 +188,11 @@
       "layers": [
         {
           "src": "resource://Normal Map 1024x1024 (1)",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
+        },
+        {
+          "src": "resource://test-pattern",
           "tiling": "tiled",
           "scaleMode": "uniform"
         }
