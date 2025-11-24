@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:14:41.468Z",
+  "updated": "2025-11-24T15:15:26.594Z",
   "categories": [
     {
       "id": "popular",
@@ -126,7 +126,7 @@
           "src": "resource://Liniar",
           "tiling": "tiled",
           "scaleMode": "xOnly",
-          "alignX": "center",
+          "alignX": "left",
           "alignY": "center"
         },
         {
@@ -135,7 +135,7 @@
           "scaleMode": "yOnly",
           "blendMode": "overlay",
           "alignX": "center",
-          "alignY": "center"
+          "alignY": "bottom"
         }
       ],
       "premium": false
@@ -148,8 +148,8 @@
         "popular"
       ],
       "category": "Ribbed glass",
-      "defaultScale": 100,
-      "defaultStrength": 150,
+      "defaultScale": 32,
+      "defaultStrength": 133,
       "chromaticAberration": 0,
       "blur": 0,
       "soft": 0,
@@ -162,13 +162,10 @@
         {
           "src": "resource://Frame 4562",
           "tiling": "tiled",
-          "scaleMode": "yOnly",
-          "alignX": "center",
-          "alignY": "center"
+          "scaleMode": "uniform"
         }
       ],
-      "premium": false,
-      "textureScale": 0.2
+      "premium": false
     },
     {
       "id": "new-preset-1763917313845",
