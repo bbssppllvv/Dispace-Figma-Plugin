@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:15:43.907Z",
+  "updated": "2025-11-24T15:16:07.416Z",
   "categories": [
     {
       "id": "popular",
@@ -127,15 +127,16 @@
           "tiling": "tiled",
           "scaleMode": "xOnly",
           "alignX": "left",
-          "alignY": "top"
+          "alignY": "top",
+          "opacity": 1
         },
         {
           "src": "resource://Frame 4562",
           "tiling": "tiled",
           "scaleMode": "yOnly",
           "blendMode": "overlay",
-          "alignX": "right",
-          "alignY": "bottom"
+          "alignX": "center",
+          "alignY": "center"
         }
       ],
       "premium": false
