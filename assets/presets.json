@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:16:07.416Z",
+  "updated": "2025-11-24T15:16:24.869Z",
   "categories": [
     {
       "id": "popular",
@@ -126,8 +126,8 @@
           "src": "resource://Liniar",
           "tiling": "tiled",
           "scaleMode": "xOnly",
-          "alignX": "left",
-          "alignY": "top",
+          "alignX": "center",
+          "alignY": "center",
           "opacity": 1
         },
         {
