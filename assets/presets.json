@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:05:27.545Z",
+  "updated": "2025-11-24T15:05:36.953Z",
   "categories": [
     {
       "id": "popular",
@@ -187,15 +187,7 @@
       "reflectSharpness": 0,
       "layers": [
         {
-          "src": "resource://523526",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "opacity": 1,
-          "alignX": "center",
-          "alignY": "center"
-        },
-        {
-          "src": "",
+          "src": "resource://Normal Map 1024x1024 (2)",
           "tiling": "tiled",
           "scaleMode": "uniform"
         }
