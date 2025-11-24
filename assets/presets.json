@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:16:39.142Z",
+  "updated": "2025-11-24T15:29:18.244Z",
   "categories": [
     {
       "id": "popular",
@@ -111,8 +111,8 @@
         "popular"
       ],
       "category": "Ribbed glass",
-      "defaultScale": 100,
-      "defaultStrength": 150,
+      "defaultScale": 32,
+      "defaultStrength": 133,
       "chromaticAberration": 0,
       "blur": 0,
       "soft": 0,
@@ -127,8 +127,7 @@
           "tiling": "tiled",
           "scaleMode": "xOnly",
           "alignX": "center",
-          "alignY": "center",
-          "opacity": 1
+          "alignY": "center"
         },
         {
           "src": "resource://Frame 4562",
@@ -137,34 +136,6 @@
           "blendMode": "overlay",
           "alignX": "center",
           "alignY": "center"
-        }
-      ],
-      "premium": false,
-      "textureScale": 0.4
-    },
-    {
-      "id": "new-preset-1763916342626",
-      "name": "New Preset2222",
-      "categories": [
-        "ribbed-glass",
-        "popular"
-      ],
-      "category": "Ribbed glass",
-      "defaultScale": 32,
-      "defaultStrength": 133,
-      "chromaticAberration": 0,
-      "blur": 0,
-      "soft": 0,
-      "dissolveStrength": 0,
-      "grain": 100,
-      "grainSize": 50,
-      "reflectOpacity": 0,
-      "reflectSharpness": 0,
-      "layers": [
-        {
-          "src": "resource://Frame 4562",
-          "tiling": "tiled",
-          "scaleMode": "uniform"
         }
       ],
       "premium": false
@@ -198,6 +169,36 @@
       ],
       "premium": false,
       "textureScale": 0.1
+    },
+    {
+      "id": "new-preset-1763916342626",
+      "name": "New Vertical",
+      "categories": [
+        "ribbed-glass",
+        "popular"
+      ],
+      "category": "Ribbed glass",
+      "defaultScale": 100,
+      "defaultStrength": 150,
+      "chromaticAberration": 0,
+      "blur": 0,
+      "soft": 0,
+      "dissolveStrength": 0,
+      "grain": 100,
+      "grainSize": 50,
+      "reflectOpacity": 0,
+      "reflectSharpness": 0,
+      "layers": [
+        {
+          "src": "resource://Frame 4562",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ],
+      "premium": false,
+      "textureScale": 0.2
     },
     {
       "id": "block-ll",
