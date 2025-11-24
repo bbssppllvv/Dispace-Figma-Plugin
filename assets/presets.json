@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:06:27.872Z",
+  "updated": "2025-11-24T15:06:35.751Z",
   "categories": [
     {
       "id": "popular",
@@ -190,7 +190,8 @@
           "src": "resource://Normal Map 1024x1024 (2)",
           "tiling": "tiled",
           "scaleMode": "uniform",
-          "alignY": "center"
+          "alignY": "center",
+          "alignX": "center"
         }
       ],
       "premium": false,
