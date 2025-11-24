@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-11-24T15:05:36.953Z",
+  "updated": "2025-11-24T15:05:45.572Z",
   "categories": [
     {
       "id": "popular",
@@ -193,7 +193,7 @@
         }
       ],
       "premium": false,
-      "textureScale": 0.5
+      "textureScale": 0.2
     },
     {
       "id": "block-ll",
