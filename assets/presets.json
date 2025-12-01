@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-12-01T23:02:57.950Z",
+  "updated": "2025-12-01T23:21:29.353Z",
   "categories": [
     {
       "id": "popular",
@@ -203,6 +203,33 @@
           "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
+        }
+      ],
+      "premium": false
+    },
+    {
+      "id": "new-preset-1764631271829",
+      "name": "New Preset2343253253223",
+      "categories": [
+        "ribbed-glass"
+      ],
+      "category": "Ribbed glass",
+      "defaultScale": 100,
+      "textureScale": 1,
+      "defaultStrength": 150,
+      "chromaticAberration": 0,
+      "blur": 0,
+      "soft": 0,
+      "dissolveStrength": 0,
+      "grain": 0,
+      "grainSize": 50,
+      "reflectOpacity": 0,
+      "reflectSharpness": 0,
+      "layers": [
+        {
+          "src": "",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
         }
       ],
       "premium": false
