@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-12-01T22:45:54.290Z",
+  "updated": "2025-12-01T22:47:19.893Z",
   "categories": [
     {
       "id": "popular",
@@ -123,11 +123,16 @@
       "reflectSharpness": 0,
       "layers": [
         {
-          "src": "resource://H17",
+          "src": "resource://H6",
           "tiling": "tiled",
           "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
+        },
+        {
+          "src": "",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
         }
       ]
     },
