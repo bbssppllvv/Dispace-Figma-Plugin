@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-12-01T22:43:45.801Z",
+  "updated": "2025-12-01T22:44:05.719Z",
   "categories": [
     {
       "id": "popular",
@@ -104,6 +104,26 @@
       ]
     },
     {
+      "id": "new-preset-1764629020796",
+      "name": "New Preset",
+      "categories": [
+        "ribbed-glass"
+      ],
+      "category": "Custom",
+      "defaultScale": 100,
+      "textureScale": 1,
+      "defaultStrength": 150,
+      "chromaticAberration": 0,
+      "blur": 0,
+      "soft": 0,
+      "dissolveStrength": 0,
+      "grain": 0,
+      "grainSize": 50,
+      "reflectOpacity": 0,
+      "reflectSharpness": 0,
+      "layers": []
+    },
+    {
       "id": "new-preset-1763922169213",
       "name": "New Preset Preset Preset",
       "categories": [
@@ -201,7 +221,7 @@
       "textureScale": 0.3
     },
     {
-      "id": "new-preset-1764629020796",
+      "id": "new-preset-1764629032954",
       "name": "New Preset",
       "categories": [
         "custom"
