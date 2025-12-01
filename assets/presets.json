@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-12-01T22:44:05.719Z",
+  "updated": "2025-12-01T22:45:54.290Z",
   "categories": [
     {
       "id": "popular",
@@ -121,7 +121,15 @@
       "grainSize": 50,
       "reflectOpacity": 0,
       "reflectSharpness": 0,
-      "layers": []
+      "layers": [
+        {
+          "src": "resource://H17",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
+      ]
     },
     {
       "id": "new-preset-1763922169213",
