@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-12-01T22:54:22.772Z",
+  "updated": "2025-12-01T23:02:41.980Z",
   "categories": [
     {
       "id": "popular",
@@ -143,6 +143,44 @@
     {
       "id": "new-preset-1764629020796",
       "name": "New Preset222",
+      "categories": [
+        "ribbed-glass"
+      ],
+      "category": "Ribbed glass",
+      "defaultScale": 100,
+      "textureScale": 1,
+      "defaultStrength": 150,
+      "chromaticAberration": 0,
+      "blur": 0,
+      "soft": 0,
+      "dissolveStrength": 0,
+      "grain": 0,
+      "grainSize": 50,
+      "reflectOpacity": 0,
+      "reflectSharpness": 0,
+      "layers": [
+        {
+          "src": "resource://H6",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        },
+        {
+          "src": "resource://V6",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "blendMode": "overlay",
+          "alignX": "center",
+          "alignY": "center",
+          "opacity": 1
+        }
+      ],
+      "premium": false
+    },
+    {
+      "id": "new-preset-1764629020796-copy-1764630161977",
+      "name": "New Preset222 (Copy)",
       "categories": [
         "ribbed-glass"
       ],
