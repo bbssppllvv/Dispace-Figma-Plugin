@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "baseUrl": "https://your-cdn.vercel.app/assets",
-  "generated": "2025-12-01T22:47:05.226Z",
+  "generated": "2025-12-01T22:47:21.732Z",
   "resources": {
     "displacement-maps": {
       "523526": {
@@ -121,6 +121,13 @@
         "path": "/displacement-maps/svg/S Curve.svg",
         "hash": "sha256-f3dccdad1d55cbfd23625d2e5194ad65f1981c3330df64205a9ba271dcd8ca5d",
         "size": 2834,
+        "dimensions": null
+      },
+      "V6": {
+        "type": "svg",
+        "path": "/displacement-maps/svg/V6.svg",
+        "hash": "sha256-5e53200e141215154e8bb39c27b3d93329956915d3e2f233745c97a1b3af67d2",
+        "size": 529,
         "dimensions": null
       },
       "diamond-pattern": {
