@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "updated": "2025-12-01T22:47:52.947Z",
+  "updated": "2025-12-01T22:50:33.310Z",
   "categories": [
     {
       "id": "popular",
@@ -135,7 +135,8 @@
           "scaleMode": "uniform",
           "blendMode": "overlay",
           "alignX": "center",
-          "alignY": "center"
+          "alignY": "center",
+          "opacity": 0.28
         }
       ]
     },
