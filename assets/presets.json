@@ -1,50 +1,19 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T00:54:59.822Z",
-  "categories": [
-    {
-      "id": "popular",
-      "name": "Popular",
-      "order": 1
-    },
-    {
-      "id": "ribbed-glass",
-      "name": "Ribbed glass",
-      "order": 2
-    },
-    {
-      "id": "fabric",
-      "name": "Fabric",
-      "order": 3
-    },
-    {
-      "id": "geometric",
-      "name": "Geometric",
-      "order": 4
-    },
-    {
-      "id": "organic",
-      "name": "Organic",
-      "order": 5
-    },
-    {
-      "id": "custom",
-      "name": "Custom",
-      "order": 100
-    }
-  ],
+  "updated": "2025-12-02T01:08:10.942Z",
+  "categories": [],
   "presets": [
     {
       "id": "new-preset",
       "name": "New Preset",
-      "category": "geometric",
+      "category": "custom",
       "popular": false,
       "defaultScale": 100,
       "textureScale": 1,
       "defaultStrength": 150,
       "layers": [
         {
-          "src": "resource://Normal Map 1024x1024 (2)",
+          "src": "resource://Frame 4563",
           "tiling": "tiled",
           "scaleMode": "uniform"
         }
