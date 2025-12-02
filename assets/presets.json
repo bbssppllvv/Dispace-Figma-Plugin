@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T01:55:16.145Z",
+  "updated": "2025-12-02T01:56:39.167Z",
   "categories": [
     {
       "id": "popular",
@@ -195,7 +195,7 @@
       "category": "new",
       "popular": false,
       "defaultScale": 100,
-      "textureScale": 0.1,
+      "textureScale": 0.5,
       "defaultStrength": 150,
       "layers": [
         {
