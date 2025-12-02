@@ -1,19 +1,25 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T01:08:10.942Z",
-  "categories": [],
+  "updated": "2025-12-02T01:08:53.001Z",
+  "categories": [
+    {
+      "id": "new",
+      "name": "new",
+      "order": 10
+    }
+  ],
   "presets": [
     {
       "id": "new-preset",
       "name": "New Preset",
-      "category": "custom",
+      "category": "new",
       "popular": false,
       "defaultScale": 100,
       "textureScale": 1,
       "defaultStrength": 150,
       "layers": [
         {
-          "src": "resource://Frame 4563",
+          "src": "resource://Frame 4562",
           "tiling": "tiled",
           "scaleMode": "uniform"
         }
