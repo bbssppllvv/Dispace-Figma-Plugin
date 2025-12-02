@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T01:09:26.418Z",
+  "updated": "2025-12-02T01:09:43.539Z",
   "categories": [
     {
       "id": "new",
@@ -21,7 +21,8 @@
         {
           "src": "resource://Frame 4562",
           "tiling": "tiled",
-          "scaleMode": "uniform"
+          "scaleMode": "uniform",
+          "opacity": 1
         }
       ]
     }
