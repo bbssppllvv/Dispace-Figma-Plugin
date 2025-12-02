@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "baseUrl": "https://your-cdn.vercel.app/assets",
-  "generated": "2025-12-02T01:38:16.349Z",
+  "generated": "2025-12-02T01:38:17.374Z",
   "resources": {
     "displacement-maps": {
       "Group 15439": {
@@ -23,6 +23,13 @@
         "path": "/displacement-maps/svg/H10.svg",
         "hash": "sha256-fa18e86df368dcdce73509567d49356db5d21b15aaabf4f6de0bb3415e2dbf00",
         "size": 457,
+        "dimensions": null
+      },
+      "H11": {
+        "type": "svg",
+        "path": "/displacement-maps/svg/H11.svg",
+        "hash": "sha256-cd4c76441a1487b8d79360bebfb296e5aee3a5eb3ed3a0d7e384090656602c0d",
+        "size": 539,
         "dimensions": null
       },
       "H12": {
