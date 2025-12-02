@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T01:24:56.671Z",
+  "updated": "2025-12-02T01:55:03.330Z",
   "categories": [
     {
       "id": "popular",
@@ -190,14 +190,26 @@
       "layers": []
     },
     {
-      "id": "new-preset-1",
-      "name": "New Preset",
-      "category": "popular",
+      "id": "new-preset-1345325",
+      "name": "New Preset32423",
+      "category": "new",
       "popular": false,
       "defaultScale": 100,
       "textureScale": 1,
       "defaultStrength": 150,
-      "layers": []
+      "layers": [
+        {
+          "src": "resource://H8",
+          "tiling": "tiled",
+          "scaleMode": "xOnly"
+        },
+        {
+          "src": "resource://V8",
+          "tiling": "tiled",
+          "scaleMode": "yOnly",
+          "blendMode": "overlay"
+        }
+      ]
     },
     {
       "id": "new-preset-2567",
