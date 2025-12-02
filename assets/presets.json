@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T01:20:07.251Z",
+  "updated": "2025-12-02T01:24:06.175Z",
   "categories": [
     {
       "id": "popular",
@@ -31,6 +31,11 @@
       "id": "custom",
       "name": "Custom",
       "order": 100
+    },
+    {
+      "id": "new",
+      "name": "new",
+      "order": 1
     }
   ],
   "presets": [
@@ -176,6 +181,16 @@
     },
     {
       "id": "new-preset",
+      "name": "New Preset",
+      "category": "popular",
+      "popular": false,
+      "defaultScale": 100,
+      "textureScale": 1,
+      "defaultStrength": 150,
+      "layers": []
+    },
+    {
+      "id": "new-preset-1",
       "name": "New Preset",
       "category": "popular",
       "popular": false,
