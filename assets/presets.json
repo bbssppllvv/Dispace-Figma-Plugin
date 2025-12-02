@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T00:50:51.630Z",
+  "updated": "2025-12-02T00:51:19.917Z",
   "categories": [
     {
       "id": "popular",
@@ -503,12 +503,18 @@
     {
       "id": "new-preset",
       "name": "New Preset",
-      "category": "ribbed-glass",
+      "category": "geometric",
       "popular": false,
       "defaultScale": 100,
       "textureScale": 1,
       "defaultStrength": 150,
-      "layers": []
+      "layers": [
+        {
+          "src": "resource://Normal Map 1024x1024 (2)",
+          "tiling": "tiled",
+          "scaleMode": "uniform"
+        }
+      ]
     }
   ]
 }
