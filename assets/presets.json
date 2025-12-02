@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T02:02:41.714Z",
+  "updated": "2025-12-02T02:04:38.046Z",
   "categories": [
     {
       "id": "popular",
@@ -195,7 +195,7 @@
       "category": "new",
       "popular": false,
       "defaultScale": 100,
-      "textureScale": 0.5,
+      "textureScale": 0.2,
       "defaultStrength": 150,
       "layers": [
         {
@@ -228,6 +228,24 @@
           "src": "resource://Frame 4562",
           "tiling": "tiled",
           "scaleMode": "uniform"
+        }
+      ]
+    },
+    {
+      "id": "new-preset-1345325-copy",
+      "name": "New Preset32423 (Copy)",
+      "category": "new",
+      "popular": false,
+      "defaultScale": 100,
+      "textureScale": 0.5,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H15",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
         }
       ]
     }
