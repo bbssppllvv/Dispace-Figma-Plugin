@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-01T23:59:51.234Z",
+  "updated": "2025-12-02T00:04:37.614Z",
   "categories": [
     {
       "id": "popular",
@@ -36,7 +36,7 @@
   "presets": [
     {
       "id": "horizontal-glass",
-      "name": "Horizontal Glass",
+      "name": "Horizontal Glass ",
       "category": "Ribbed glass",
       "defaultScale": 32,
       "defaultStrength": 133,
