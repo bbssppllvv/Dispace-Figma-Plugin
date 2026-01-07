@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-07T13:50:46.981Z",
+  "updated": "2026-01-07T13:53:15.564Z",
   "categories": [
     {
       "id": "popular",
@@ -272,7 +272,7 @@
       "category": "vertical",
       "popular": false,
       "defaultScale": 50,
-      "textureScale": 0.2,
+      "textureScale": 0.1,
       "defaultStrength": 150,
       "layers": [
         {
@@ -294,7 +294,7 @@
       "category": "vertical",
       "popular": false,
       "defaultScale": 50,
-      "textureScale": 0.2,
+      "textureScale": 0.1,
       "defaultStrength": 150,
       "layers": [
         {
@@ -316,7 +316,7 @@
       "category": "vertical",
       "popular": false,
       "defaultScale": 50,
-      "textureScale": 0.2,
+      "textureScale": 0.1,
       "defaultStrength": 150,
       "layers": [
         {
