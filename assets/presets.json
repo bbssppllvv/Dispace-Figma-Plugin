@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-07T14:01:02.466Z",
+  "updated": "2026-01-07T14:07:46.358Z",
   "categories": [
     {
       "id": "popular",
@@ -270,7 +270,7 @@
       "id": "new-preset-1",
       "name": "Vertical l",
       "category": "vertical",
-      "popular": false,
+      "popular": true,
       "defaultScale": 50,
       "textureScale": 0.1,
       "defaultStrength": 150,
