@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-07T13:53:15.564Z",
+  "updated": "2026-01-07T14:01:02.466Z",
   "categories": [
     {
       "id": "popular",
@@ -321,6 +321,138 @@
       "layers": [
         {
           "src": "resource://H3",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignY": "center",
+          "alignX": "center",
+          "opacity": 1
+        }
+      ],
+      "categories": [
+        "vertical"
+      ]
+    },
+    {
+      "id": "new-preset-1-copy-copy-copy",
+      "name": "Vertical lll (Copy)",
+      "category": "vertical",
+      "popular": false,
+      "defaultScale": 50,
+      "textureScale": 0.1,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H4",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignY": "center",
+          "alignX": "center",
+          "opacity": 1
+        }
+      ],
+      "categories": [
+        "vertical"
+      ]
+    },
+    {
+      "id": "new-preset-1-copy-copy-copy-copy",
+      "name": "Vertical lll (Copy) (Copy)",
+      "category": "vertical",
+      "popular": false,
+      "defaultScale": 50,
+      "textureScale": 0.1,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H5",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignY": "center",
+          "alignX": "center",
+          "opacity": 1
+        }
+      ],
+      "categories": [
+        "vertical"
+      ]
+    },
+    {
+      "id": "new-preset-1-copy-copy-copy-copy-copy",
+      "name": "Vertical lll (Copy) (Copy) (Copy)",
+      "category": "vertical",
+      "popular": false,
+      "defaultScale": 50,
+      "textureScale": 0.1,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H6",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignY": "center",
+          "alignX": "center",
+          "opacity": 1
+        }
+      ],
+      "categories": [
+        "vertical"
+      ]
+    },
+    {
+      "id": "new-preset-1-copy-copy-copy-copy-copy-copy",
+      "name": "Vertical lll (Copy) (Copy) (Copy) (Copy)",
+      "category": "vertical",
+      "popular": false,
+      "defaultScale": 50,
+      "textureScale": 0.1,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H7",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignY": "center",
+          "alignX": "center",
+          "opacity": 1
+        }
+      ],
+      "categories": [
+        "vertical"
+      ]
+    },
+    {
+      "id": "new-preset-1-copy-copy-copy-copy-copy-copy-copy",
+      "name": "Vertical lll (Copy) (Copy) (Copy) (Copy) (Copy)",
+      "category": "vertical",
+      "popular": false,
+      "defaultScale": 50,
+      "textureScale": 0.1,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H8",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignY": "center",
+          "alignX": "center",
+          "opacity": 1
+        }
+      ],
+      "categories": [
+        "vertical"
+      ]
+    },
+    {
+      "id": "new-preset-1-copy-copy-copy-copy-copy-copy-copy-copy",
+      "name": "Vertical lll (Copy) (Copy) (Copy) (Copy) (Copy) (Copy)",
+      "category": "vertical",
+      "popular": false,
+      "defaultScale": 50,
+      "textureScale": 0.1,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H9",
           "tiling": "tiled",
           "scaleMode": "xOnly",
           "alignY": "center",
