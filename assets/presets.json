@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2025-12-02T02:04:38.046Z",
+  "updated": "2026-01-07T13:18:46.451Z",
   "categories": [
     {
       "id": "popular",
@@ -36,6 +36,11 @@
       "id": "new",
       "name": "new",
       "order": 1
+    },
+    {
+      "id": "vertical",
+      "name": "Vertical",
+      "order": 110
     }
   ],
   "presets": [
@@ -246,6 +251,24 @@
           "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
+        }
+      ]
+    },
+    {
+      "id": "new-preset-1",
+      "name": "New Preset",
+      "category": "popular",
+      "popular": false,
+      "defaultScale": 50,
+      "textureScale": 0.5,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H1",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "alignY": "center",
+          "alignX": "center"
         }
       ]
     }
