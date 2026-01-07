@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-07T14:13:08.832Z",
+  "updated": "2026-01-07T14:52:39.459Z",
   "categories": [
     {
       "id": "popular",
@@ -470,6 +470,27 @@
       ],
       "categories": [
         "vertical"
+      ]
+    },
+    {
+      "id": "new-preset-2",
+      "name": "Block",
+      "category": "new",
+      "categories": [
+        "new"
+      ],
+      "popular": false,
+      "defaultScale": 100,
+      "textureScale": 0.2,
+      "defaultStrength": 150,
+      "layers": [
+        {
+          "src": "resource://H15",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "alignX": "center",
+          "alignY": "center"
+        }
       ]
     }
   ]
