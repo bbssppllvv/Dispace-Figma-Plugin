@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-07T14:53:36.147Z",
+  "updated": "2026-01-07T14:55:59.011Z",
   "categories": [
     {
       "id": "popular",
@@ -473,12 +473,11 @@
       ]
     },
     {
-      "id": "new-preset-2",
-      "name": "Block",
-      "category": "new",
+      "id": "new-preset-233",
+      "name": "new-preset-233new-preset-233",
+      "category": "ribbed-glass",
       "categories": [
-        "new",
-        "popular"
+        "ribbed-glass"
       ],
       "popular": true,
       "defaultScale": 100,
