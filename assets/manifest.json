@@ -1,9 +1,16 @@
 {
   "version": "1.0.0",
   "baseUrl": "https://your-cdn.vercel.app/assets",
-  "generated": "2025-12-02T01:38:47.820Z",
+  "generated": "2026-01-08T23:10:39.612Z",
   "resources": {
     "displacement-maps": {
+      "19": {
+        "type": "svg",
+        "path": "/displacement-maps/svg/19.svg",
+        "hash": "sha256-d8597fded88e64ba61384cea90fe0d887f6b6b0c3fbfa541b1667250face9569",
+        "size": 786,
+        "dimensions": null
+      },
       "Group 15439": {
         "type": "png",
         "path": "/displacement-maps/png/Group 15439.png",
@@ -268,6 +275,50 @@
         "path": "/displacement-maps/svg/V9.svg",
         "hash": "sha256-54f46a738cb2a07ee5d5eb400a44771137278f8a1c1f7065d4e50e1d212f1479",
         "size": 445,
+        "dimensions": null
+      }
+    },
+    "samples": {
+      "231435242135": {
+        "type": "png",
+        "path": "/samples/231435242135.png",
+        "hash": "sha256-437d037edbc548f8a8fb420090ffbd42304656bcf5f31c04a1f962e7c584d9cd",
+        "size": 136161,
+        "dimensions": null
+      },
+      "7117907d141b021b4b5dafa38e96503a": {
+        "type": "jpg",
+        "path": "/samples/7117907d141b021b4b5dafa38e96503a.jpg",
+        "hash": "sha256-b36c98aa3b816aa35ab14813ca335f9f1b2dff3731489682525b63db4a99b932",
+        "size": 27020,
+        "dimensions": null
+      },
+      "Placeholder image from Blob": {
+        "type": "png",
+        "path": "/samples/Placeholder image from Blob.png",
+        "hash": "sha256-6091f8956cadeede2ad4e44dae4e50c9f495219588230170d0b7f3c3615355fa",
+        "size": 610462,
+        "dimensions": null
+      },
+      "Sergey Vinogradov Unsplash copy 2": {
+        "type": "jpg",
+        "path": "/samples/Sergey Vinogradov Unsplash copy 2.jpg",
+        "hash": "sha256-1b9b9da42dd835481ced10d0c434d040bb4dece86940d3961e1660ce61882e70",
+        "size": 4013750,
+        "dimensions": null
+      },
+      "a9ecf417ddb6fe77e213910cd36c15f0": {
+        "type": "jpg",
+        "path": "/samples/a9ecf417ddb6fe77e213910cd36c15f0.jpg",
+        "hash": "sha256-a46db1958086b8e49f67cb81641c618c2669071ed2db15cb98b2017d5b0b1d48",
+        "size": 99172,
+        "dimensions": null
+      },
+      "sample01": {
+        "type": "png",
+        "path": "/samples/sample01.png",
+        "hash": "sha256-32bce60972544fcfc173310812a920930ddd14f9b01bcc967dbc7f6180a14aa3",
+        "size": 1477488,
         "dimensions": null
       }
     }
