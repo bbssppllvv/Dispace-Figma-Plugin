@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-08T17:38:43.696Z",
+  "updated": "2026-01-08T17:40:39.817Z",
   "categories": [
     {
       "id": "popular",
@@ -317,28 +317,16 @@
   ],
   "sampleImages": [
     {
-      "id": "sample01",
-      "name": "Sample 1",
-      "url": "/samples/sample01.png",
-      "order": 1
-    },
-    {
-      "id": "sample02",
-      "name": "Sample 2",
-      "url": "/samples/sample02.png",
-      "order": 2
-    },
-    {
-      "id": "sample03",
-      "name": "Sample 3",
-      "url": "/samples/sample03.png",
-      "order": 3
-    },
-    {
       "id": "7117907d141b021b4b5dafa38e96503a",
       "name": "7117907d141b021b4b5dafa38e96503a",
       "url": "/api/sample/7117907d141b021b4b5dafa38e96503a.jpg",
       "order": 4
+    },
+    {
+      "id": "231435242135",
+      "name": "231435242135",
+      "url": "/api/sample/231435242135.png",
+      "order": 5
     }
   ]
 }
