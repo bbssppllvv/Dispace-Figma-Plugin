@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-08T23:11:38.167Z",
+  "updated": "2026-01-08T23:15:00.624Z",
   "categories": [
     {
       "id": "popular",
@@ -287,7 +287,7 @@
       "defaultStrength": 150,
       "layers": [
         {
-          "src": "resource://19",
+          "src": "resource://20",
           "tiling": "tiled",
           "scaleMode": "yOnly",
           "alignY": "center",
