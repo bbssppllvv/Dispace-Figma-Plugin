@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-08T23:15:00.624Z",
+  "updated": "2026-01-08T23:20:58.728Z",
   "categories": [
     {
       "id": "popular",
@@ -279,7 +279,7 @@
     },
     {
       "id": "new-preset-1-copy-copy-copy-copy-copy-copy-copy-copy",
-      "name": "Horizontal lll (Copy) (Copy) (Copy) (Copy) (Copy) (Copy)",
+      "name": "Horizontal lll lll",
       "category": "horizontal",
       "popular": true,
       "defaultScale": 50,
@@ -287,11 +287,17 @@
       "defaultStrength": 150,
       "layers": [
         {
-          "src": "resource://20",
+          "src": "resource://V1",
           "tiling": "tiled",
           "scaleMode": "yOnly",
           "alignY": "center",
           "alignX": "center",
+          "opacity": 1
+        },
+        {
+          "src": "resource://Vin01",
+          "tiling": "stretched",
+          "scaleMode": "uniform",
           "opacity": 1
         }
       ],
