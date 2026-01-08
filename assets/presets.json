@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-08T18:38:37.320Z",
+  "updated": "2026-01-08T18:39:04.157Z",
   "categories": [
     {
       "id": "popular",
@@ -333,6 +333,12 @@
       "name": "Placeholder image from Blob",
       "url": "/samples/Placeholder image from Blob.png",
       "order": 6
+    },
+    {
+      "id": "Sergey Vinogradov Unsplash copy 2",
+      "name": "Sergey Vinogradov Unsplash copy 2",
+      "url": "/samples/Sergey Vinogradov Unsplash copy 2.jpg",
+      "order": 7
     }
   ],
   "tooltips": []
