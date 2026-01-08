@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-08T18:05:19.436Z",
+  "updated": "2026-01-08T18:10:03.826Z",
   "categories": [
     {
       "id": "popular",
@@ -333,6 +333,13 @@
       "name": "L4XLQTTOKDUTD7SRIZ5WYBEI2I",
       "url": "/samples/L4XLQTTOKDUTD7SRIZ5WYBEI2I.jpg",
       "order": 6
+    },
+    {
+      "id": "Placeholder image from Blob",
+      "name": "Placeholder image from Blob",
+      "url": "/samples/Placeholder image from Blob.png",
+      "order": 7
     }
-  ]
+  ],
+  "tooltips": []
 }
