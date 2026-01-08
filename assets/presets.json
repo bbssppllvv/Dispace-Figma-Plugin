@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-08T23:20:58.728Z",
+  "updated": "2026-01-08T23:32:33.090Z",
   "categories": [
     {
       "id": "popular",
@@ -101,7 +101,7 @@
     },
     {
       "id": "new-preset-1",
-      "name": "Vertical l",
+      "name": "Vertical llllll",
       "category": "vertical",
       "popular": true,
       "defaultScale": 50,
@@ -109,11 +109,16 @@
       "defaultStrength": 150,
       "layers": [
         {
-          "src": "resource://H1",
+          "src": "resource://V1",
           "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "alignY": "center",
+          "scaleMode": "yOnly",
           "alignX": "center",
+          "alignY": "center"
+        },
+        {
+          "src": "resource://Vin01",
+          "tiling": "stretched",
+          "scaleMode": "uniform",
           "opacity": 1
         }
       ],
