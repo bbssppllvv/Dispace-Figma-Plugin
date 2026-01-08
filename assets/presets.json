@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-07T14:57:17.789Z",
+  "updated": "2026-01-08T17:31:53.732Z",
   "categories": [
     {
       "id": "popular",
@@ -35,7 +35,7 @@
     {
       "id": "new",
       "name": "new",
-      "order": 1
+      "order": 6
     },
     {
       "id": "vertical",
@@ -44,166 +44,6 @@
     }
   ],
   "presets": [
-    {
-      "id": "block-lll-copy-1757433356971",
-      "name": "Block lll (Copy)",
-      "category": "block",
-      "defaultScale": 25,
-      "defaultStrength": 80,
-      "layers": [
-        {
-          "src": "resource://diamond-pattern",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "premium": false,
-      "categories": [
-        "block"
-      ],
-      "popular": false
-    },
-    {
-      "id": "block-lll-copy-1757433356971-copy-1757437070616",
-      "name": "Block lll (Copy) (Copy)",
-      "category": "block",
-      "defaultScale": 25,
-      "defaultStrength": 80,
-      "layers": [
-        {
-          "src": "resource://diamond-pattern",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "premium": false,
-      "categories": [
-        "block"
-      ],
-      "popular": false
-    },
-    {
-      "id": "block-lll-copy-1757433356971-copy-1757437070616-copy-1757443365073",
-      "name": "Block lll (Copy) (Copy) (Copy)",
-      "category": "block",
-      "defaultScale": 25,
-      "defaultStrength": 80,
-      "layers": [
-        {
-          "src": "resource://diamond-pattern",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "premium": false,
-      "categories": [
-        "block"
-      ],
-      "popular": false
-    },
-    {
-      "id": "block-lll-copy-1757433356971-copy-1757437070616-copy-1757443365073-copy-1757443735494",
-      "name": "Block lll (Copy) (Copy) (Copy) (Copy)",
-      "category": "block",
-      "defaultScale": 25,
-      "defaultStrength": 80,
-      "layers": [
-        {
-          "src": "resource://diamond-pattern",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "premium": false,
-      "categories": [
-        "block"
-      ],
-      "popular": false
-    },
-    {
-      "id": "vertical2",
-      "name": "vertical2",
-      "category": "vertical2",
-      "defaultScale": 32,
-      "defaultStrength": 133,
-      "layers": [
-        {
-          "src": "resource://Bezie",
-          "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "premium": false,
-      "categories": [
-        "vertical2"
-      ],
-      "popular": false
-    },
-    {
-      "id": "vertical2-copy-1757428979899",
-      "name": "vertical2 (Copy)",
-      "category": "vertical2",
-      "defaultScale": 32,
-      "defaultStrength": 133,
-      "layers": [
-        {
-          "src": "resource://Frame 4563",
-          "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "premium": false,
-      "categories": [
-        "vertical2"
-      ],
-      "popular": false
-    },
-    {
-      "id": "vertical2-copy-1757428979899-copy-1757430242983",
-      "name": "vertical2 (Copy) (Copy)",
-      "category": "vertical2",
-      "defaultScale": 32,
-      "defaultStrength": 133,
-      "layers": [
-        {
-          "src": "resource://Frame 4563",
-          "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "alignX": "center",
-          "alignY": "center"
-        }
-      ],
-      "premium": false,
-      "categories": [
-        "vertical2"
-      ],
-      "popular": false
-    },
-    {
-      "id": "new-preset",
-      "name": "New Preset",
-      "category": "popular",
-      "popular": true,
-      "defaultScale": 100,
-      "textureScale": 1,
-      "defaultStrength": 150,
-      "layers": [],
-      "categories": [
-        "popular"
-      ]
-    },
     {
       "id": "new-preset-1345325",
       "name": "New Preset32423",
@@ -227,25 +67,6 @@
           "blendMode": "overlay",
           "alignX": "center",
           "alignY": "center"
-        }
-      ],
-      "categories": [
-        "new"
-      ]
-    },
-    {
-      "id": "new-preset-2567",
-      "name": "New Preset4556546",
-      "category": "new",
-      "popular": false,
-      "defaultScale": 100,
-      "textureScale": 1,
-      "defaultStrength": 150,
-      "layers": [
-        {
-          "src": "resource://Frame 4562",
-          "tiling": "tiled",
-          "scaleMode": "uniform"
         }
       ],
       "categories": [
@@ -492,6 +313,20 @@
           "alignY": "center"
         }
       ]
+    }
+  ],
+  "sampleImages": [
+    {
+      "id": "7117907d141b021b4b5dafa38e96503a",
+      "name": "7117907d141b021b4b5dafa38e96503a",
+      "url": "/api/sample/7117907d141b021b4b5dafa38e96503a.jpg",
+      "order": 4
+    },
+    {
+      "id": "a9ecf417ddb6fe77e213910cd36c15f0",
+      "name": "a9ecf417ddb6fe77e213910cd36c15f0",
+      "url": "/api/sample/a9ecf417ddb6fe77e213910cd36c15f0.jpg",
+      "order": 5
     }
   ]
 }
