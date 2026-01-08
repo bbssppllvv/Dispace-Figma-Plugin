@@ -319,13 +319,13 @@
     {
       "id": "7117907d141b021b4b5dafa38e96503a",
       "name": "7117907d141b021b4b5dafa38e96503a",
-      "url": "/api/sample/7117907d141b021b4b5dafa38e96503a.jpg",
+      "url": "/samples/7117907d141b021b4b5dafa38e96503a.jpg",
       "order": 4
     },
     {
       "id": "231435242135",
       "name": "231435242135",
-      "url": "/api/sample/231435242135.png",
+      "url": "/samples/231435242135.png",
       "order": 5
     }
   ]
