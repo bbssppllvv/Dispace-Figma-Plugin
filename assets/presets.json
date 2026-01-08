@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-08T18:39:04.157Z",
+  "updated": "2026-01-08T19:09:16.954Z",
   "categories": [
     {
       "id": "popular",
@@ -115,7 +115,8 @@
       "categories": [
         "vertical",
         "popular"
-      ]
+      ],
+      "premium": true
     },
     {
       "id": "new-preset-1-copy",
