@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-08T23:32:33.090Z",
+  "updated": "2026-01-09T00:45:08.157Z",
   "categories": [
     {
       "id": "popular",
@@ -109,16 +109,11 @@
       "defaultStrength": 150,
       "layers": [
         {
-          "src": "resource://V1",
+          "src": "resource://21",
           "tiling": "tiled",
           "scaleMode": "yOnly",
           "alignX": "center",
-          "alignY": "center"
-        },
-        {
-          "src": "resource://Vin01",
-          "tiling": "stretched",
-          "scaleMode": "uniform",
+          "alignY": "center",
           "opacity": 1
         }
       ],
@@ -329,6 +324,46 @@
           "scaleMode": "uniform",
           "alignX": "center",
           "alignY": "center"
+        }
+      ]
+    },
+    {
+      "id": "test",
+      "name": "test 1 Small",
+      "category": "popular",
+      "categories": [
+        "popular"
+      ],
+      "popular": true,
+      "defaultScale": 30,
+      "textureScale": 0.1,
+      "defaultStrength": 600,
+      "layers": [
+        {
+          "src": "resource://H1",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "opacity": 1
+        }
+      ]
+    },
+    {
+      "id": "test-big",
+      "name": "test 1 BIG",
+      "category": "popular",
+      "categories": [
+        "popular"
+      ],
+      "popular": true,
+      "defaultScale": 30,
+      "textureScale": 0.1,
+      "defaultStrength": 600,
+      "layers": [
+        {
+          "src": "resource://H28BIG",
+          "tiling": "tiled",
+          "scaleMode": "xOnly",
+          "opacity": 1
         }
       ]
     }
