@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-09T18:05:54.083Z",
+  "updated": "2026-01-09T18:08:32.121Z",
   "categories": [
     {
       "id": "popular",
@@ -341,20 +341,10 @@
       "defaultStrength": 600,
       "layers": [
         {
-          "src": "resource://Round 21",
+          "src": "resource://H1",
           "tiling": "tiled",
-          "scaleMode": "uniform",
-          "opacity": 1,
-          "alignX": "center",
-          "alignY": "center"
-        },
-        {
-          "src": "resource://H17",
-          "tiling": "tiled",
-          "scaleMode": "uniform",
-          "blendMode": "overlay",
-          "alignX": "center",
-          "alignY": "center"
+          "scaleMode": "xOnly",
+          "opacity": 1
         }
       ]
     },
@@ -379,17 +369,6 @@
           "alignY": "center",
           "visible": true,
           "scaleMultiplier": 0.5
-        },
-        {
-          "src": "resource://H7",
-          "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "blendMode": "overlay",
-          "alignX": "center",
-          "alignY": "center",
-          "offsetX": 0,
-          "scaleMultiplier": 2,
-          "visible": true
         }
       ]
     }
