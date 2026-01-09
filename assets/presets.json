@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-09T01:02:45.623Z",
+  "updated": "2026-01-09T01:02:57.319Z",
   "categories": [
     {
       "id": "popular",
@@ -355,9 +355,9 @@
         "popular"
       ],
       "popular": true,
-      "defaultScale": 30,
+      "defaultScale": 50,
       "textureScale": 0.1,
-      "defaultStrength": 600,
+      "defaultStrength": 200,
       "layers": [
         {
           "src": "resource://Rectangle 4773",
