@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-09T00:45:08.157Z",
+  "updated": "2026-01-09T01:02:45.623Z",
   "categories": [
     {
       "id": "popular",
@@ -348,8 +348,8 @@
       ]
     },
     {
-      "id": "test-big",
-      "name": "test 1 BIG",
+      "id": "test-newtest-new",
+      "name": "test new",
       "category": "popular",
       "categories": [
         "popular"
@@ -360,10 +360,25 @@
       "defaultStrength": 600,
       "layers": [
         {
-          "src": "resource://H28BIG",
+          "src": "resource://Rectangle 4773",
           "tiling": "tiled",
-          "scaleMode": "xOnly",
-          "opacity": 1
+          "scaleMode": "uniform",
+          "opacity": 1,
+          "alignX": "center",
+          "alignY": "center"
+        },
+        {
+          "src": "resource://Rectangle 4813",
+          "tiling": "tiled",
+          "scaleMode": "uniform",
+          "blendMode": "overlay",
+          "alignX": "center",
+          "alignY": "center"
+        },
+        {
+          "src": "resource://Mask 5",
+          "tiling": "stretched",
+          "scaleMode": "uniform"
         }
       ]
     }
