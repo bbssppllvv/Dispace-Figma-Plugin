@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated": "2026-01-09T01:15:03.882Z",
+  "updated": "2026-01-09T17:36:36.562Z",
   "categories": [
     {
       "id": "popular",
@@ -356,7 +356,7 @@
       ],
       "popular": true,
       "defaultScale": 50,
-      "textureScale": 1,
+      "textureScale": 0.5,
       "defaultStrength": 200,
       "layers": [
         {
@@ -364,17 +364,19 @@
           "tiling": "tiled",
           "scaleMode": "uniform",
           "opacity": 1,
-          "alignX": "left",
-          "alignY": "bottom"
+          "alignX": "right",
+          "alignY": "bottom",
+          "visible": true
         },
         {
           "src": "resource://Rectangle 4816",
           "tiling": "tiled",
           "scaleMode": "uniform",
           "blendMode": "overlay",
-          "alignX": "right",
+          "alignX": "left",
           "alignY": "top",
-          "offsetX": 0
+          "offsetX": 0,
+          "visible": true
         }
       ]
     }
