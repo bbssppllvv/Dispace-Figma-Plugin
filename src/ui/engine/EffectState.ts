@@ -26,7 +26,15 @@ export class EffectStateManager {
     chromaticAberration: 0,
     blur: 0,
     soft: 0,
-    scale: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.scale
+    scale: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.scale,
+    dissolveStrength: 0,
+    grain: 0,
+    grainSize: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.grainSize,
+    reflectStrength: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectStrength,
+    reflectSoftness: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectSoftness,
+    reflectSharpness: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectSharpness,
+    reflectLightX: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectLightX,
+    reflectLightY: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectLightY
   };
 
   constructor(
@@ -69,9 +77,123 @@ export class EffectStateManager {
   }
 
   setDissolveStrength(value: number): void {
+    this.settings.dissolveStrength = value;
     if (this.svgElements.feDispMapDissolve) {
       this.svgElements.feDispMapDissolve.setAttribute('scale', String(value));
     }
+  }
+
+  setGrain(value: number): void {
+    this.settings.grain = value;
+    if (this.svgElements.feGrainAlpha) {
+      // Map 0-100 to 0-5.0 slope for opacity (5x stronger for better visibility)
+      this.svgElements.feGrainAlpha.setAttribute('slope', String((value / 100) * 5.0));
+    }
+  }
+
+  setGrainSize(value: number): void {
+    this.settings.grainSize = value;
+    if (this.svgElements.feGrainTurbulence) {
+      const minFreq = APP_CONFIG.EFFECT_CALCULATIONS.GRAIN_MIN_FREQ;
+      const maxFreq = APP_CONFIG.EFFECT_CALCULATIONS.GRAIN_MAX_FREQ;
+      const t = value / 100;
+      const freq = maxFreq - t * (maxFreq - minFreq);
+      this.svgElements.feGrainTurbulence.setAttribute('baseFrequency', String(freq));
+    }
+  }
+
+  // Reflect Effect Setters
+  setReflectStrength(value: number): void {
+    this.settings.reflectStrength = value;
+    if (this.svgElements.feSpecularLighting) {
+      const specularConstant = (value / 100) * APP_CONFIG.EFFECT_CALCULATIONS.REFLECT_MAX_SPECULAR;
+      this.svgElements.feSpecularLighting.setAttribute('specularConstant', String(specularConstant));
+      
+      // If strength is 0, we can effectively "disable" the blend by setting result to clippedResult
+      // but simpler to just let the specularConstant handle the brightness.
+      // For performance, we could swap feMergeNode in, but specularConstant=0 is very cheap.
+    }
+  }
+
+  setReflectSoftness(value: number): void {
+    this.settings.reflectSoftness = value;
+    if (this.svgElements.feReflectBlur) {
+      const minBlur = APP_CONFIG.EFFECT_CALCULATIONS.REFLECT_MIN_BLUR;
+      const maxBlur = APP_CONFIG.EFFECT_CALCULATIONS.REFLECT_MAX_BLUR;
+      const stdDev = minBlur + (value / 100) * (maxBlur - minBlur);
+      this.svgElements.feReflectBlur.setAttribute('stdDeviation', String(stdDev));
+    }
+  }
+
+  setReflectSharpness(value: number): void {
+    this.settings.reflectSharpness = value;
+    if (this.svgElements.feSpecularLighting) {
+      const minExp = APP_CONFIG.EFFECT_CALCULATIONS.REFLECT_MIN_EXPONENT;
+      const maxExp = APP_CONFIG.EFFECT_CALCULATIONS.REFLECT_MAX_EXPONENT;
+      const exponent = minExp + (value / 100) * (maxExp - minExp);
+      this.svgElements.feSpecularLighting.setAttribute('specularExponent', String(exponent));
+    }
+  }
+
+  setReflectLightPosition(x: number, y: number): void {
+    this.settings.reflectLightX = x;
+    this.settings.reflectLightY = y;
+    if (this.svgElements.fePointLight) {
+      const svgX = x * this.engineState.imageWidth;
+      const svgY = y * this.engineState.imageHeight;
+      this.svgElements.fePointLight.setAttribute('x', String(svgX));
+      this.svgElements.fePointLight.setAttribute('y', String(svgY));
+    }
+  }
+
+  // Batch update for all settings
+  setAll(settings: Partial<EffectSettings>): void {
+    let shouldUpdateScales = false;
+    let shouldUpdateBlur = false;
+
+    if (settings.strength !== undefined) {
+      this.settings.strength = settings.strength;
+      shouldUpdateScales = true;
+    }
+    if (settings.chromaticAberration !== undefined) {
+      this.settings.chromaticAberration = settings.chromaticAberration;
+      shouldUpdateScales = true;
+    }
+    if (settings.blur !== undefined) {
+      this.settings.blur = settings.blur;
+      shouldUpdateBlur = true;
+    }
+    if (settings.soft !== undefined) {
+      this.setSoft(settings.soft);
+    }
+    if (settings.scale !== undefined) {
+      this.settings.scale = settings.scale;
+      this.engineState.scalePct = settings.scale;
+    }
+    if (settings.grain !== undefined) {
+      this.setGrain(settings.grain);
+    }
+    if (settings.grainSize !== undefined) {
+      this.setGrainSize(settings.grainSize);
+    }
+    if (settings.dissolveStrength !== undefined) {
+      this.setDissolveStrength(settings.dissolveStrength);
+    }
+    if (settings.reflectStrength !== undefined) {
+      this.setReflectStrength(settings.reflectStrength);
+    }
+    if (settings.reflectSoftness !== undefined) {
+      this.setReflectSoftness(settings.reflectSoftness);
+    }
+    if (settings.reflectSharpness !== undefined) {
+      this.setReflectSharpness(settings.reflectSharpness);
+    }
+    if (settings.reflectLightX !== undefined && settings.reflectLightY !== undefined) {
+      this.setReflectLightPosition(settings.reflectLightX, settings.reflectLightY);
+    }
+
+    if (shouldUpdateScales) this.updateDisplacementScales();
+    if (shouldUpdateBlur) this.updateBlur();
   }
 
   // Getters
@@ -100,7 +222,15 @@ export class EffectStateManager {
   }
 
   getDissolveStrength(): string {
-    return this.svgElements.feDispMapDissolve?.getAttribute('scale') || '0';
+    return String(this.settings.dissolveStrength);
+  }
+
+  getGrain(): number {
+    return this.settings.grain;
+  }
+
+  getGrainSize(): number {
+    return this.settings.grainSize;
   }
 
   // Private update methods
@@ -133,16 +263,13 @@ export class EffectStateManager {
 
   // Update image dimensions (called when new image is loaded)
   updateImageDimensions(width: number, height: number): void {
-    // Skip if dimensions have not changed to avoid redundant DOM updates
-    if (this.engineState.imageWidth === width && this.engineState.imageHeight === height) {
-      return;
-    }
     this.engineState.imageWidth = width;
     this.engineState.imageHeight = height;
-    
-    // Reapply current effects with new dimensions
     this.updateDisplacementScales();
     this.updateBlur();
+    
+    // Update light position if it exists
+    this.setReflectLightPosition(this.settings.reflectLightX, this.settings.reflectLightY);
   }
 
   // Clear all effects
@@ -152,11 +279,25 @@ export class EffectStateManager {
       chromaticAberration: 0,
       blur: 0,
       soft: 0,
-      scale: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.scale
+      scale: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.scale,
+      dissolveStrength: 0,
+      grain: 0,
+      grainSize: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.grainSize,
+      reflectStrength: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectStrength,
+      reflectSoftness: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectSoftness,
+      reflectSharpness: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectSharpness,
+      reflectLightX: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectLightX,
+      reflectLightY: APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectLightY
     };
     
     this.updateDisplacementScales();
     this.updateBlur();
     this.setDissolveStrength(0);
+    this.setGrain(0);
+    this.setGrainSize(APP_CONFIG.DEFAULT_EFFECT_SETTINGS.grainSize);
+    this.setReflectStrength(APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectStrength);
+    this.setReflectSoftness(APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectSoftness);
+    this.setReflectSharpness(APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectSharpness);
+    this.setReflectLightPosition(APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectLightX, APP_CONFIG.DEFAULT_EFFECT_SETTINGS.reflectLightY);
   }
-} 
+}

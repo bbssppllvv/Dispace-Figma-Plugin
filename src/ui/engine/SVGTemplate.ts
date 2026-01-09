@@ -31,7 +31,7 @@ export function createSVGTemplate(): string {
   const NS = "http://www.w3.org/2000/svg";
 
   return `
-    <svg id="svgRoot" xmlns="${NS}" viewBox="0 0 ${initialSize} ${initialSize}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="image-rendering: pixelated; image-rendering: crisp-edges;">
+    <svg id="svgRoot" xmlns="${NS}" viewBox="0 0 ${initialSize} ${initialSize}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="image-rendering: auto;">
       <defs>
         <!-- Mask to hide mirrored edges -->
         <mask id="imageMask">
@@ -40,10 +40,11 @@ export function createSVGTemplate(): string {
         
         <filter id="f" x="${-initialFilterMargin}" y="${-initialFilterMargin}" width="${initialSize + initialFilterMargin * 2}" height="${initialSize + initialFilterMargin * 2}" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse">
           <!-- Source image, loaded via JS -->
-          <feImage id="feSourceImg" result="sourceImage" width="${initialSize}" height="${initialSize}" x="0" y="0" href="" image-rendering="pixelated" />
+          <feImage id="feSourceImg" result="sourceImageRaw" width="${initialSize}" height="${initialSize}" x="0" y="0" href="" image-rendering="auto" />
+          <feTile in="sourceImageRaw" result="sourceImage" />
           
           <!-- Displacement map, loaded via JS, which will be tiled -->
-          <feImage id="feImg" x="0" y="0" width="${initialSize}" height="${initialSize}" result="fileMap" image-rendering="pixelated" />
+          <feImage id="feImg" x="0" y="0" width="${initialSize}" height="${initialSize}" result="fileMap" image-rendering="auto" />
 
           <!-- Soft blur applied to displacement map (controlled via EffectStateManager.setSoft) -->
           <feGaussianBlur id="feMapGaussianBlur" in="fileMap" stdDeviation="0" result="fileMapSoft" />
@@ -81,11 +82,32 @@ export function createSVGTemplate(): string {
           <feBlend in="displaced_R" in2="displaced_G" mode="screen" result="RG_displaced" />
           <feBlend in="RG_displaced" in2="displaced_B" mode="screen" result="FinalDisplaced" />
 
-          <!-- STEP 4: Pass-through to preserve result while keeping named handle for ReflectEffect -->
-          <feOffset in="FinalDisplaced" dx="0" dy="0" result="clippedResult" />
+          <!-- GRAIN EFFECT -->
+          <feTurbulence id="feGrainTurbulence" type="fractalNoise" baseFrequency="0.8" numOctaves="3" seed="0" stitchTiles="stitch" result="grainRaw" />
+          <feColorMatrix type="saturate" values="0" in="grainRaw" result="grainGray" />
+          <feComponentTransfer in="grainGray" result="grainAdjusted">
+            <feFuncA id="feGrainAlpha" type="linear" slope="0" intercept="0"/>
+          </feComponentTransfer>
+          <feBlend id="feGrainBlend" in="grainAdjusted" in2="FinalDisplaced" mode="overlay" result="FinalWithGrain" />
 
+          <!-- STEP 4: Pass-through to preserve result (hook for future effects) -->
+          <feOffset in="FinalWithGrain" dx="0" dy="0" result="clippedResult" />
+
+          <!-- REFLECT EFFECT -->
+          <!-- Independent branch reacting to displacement map -->
+          <feGaussianBlur id="feReflectBlur" in="fileMapSoft" stdDeviation="2.0" result="reflectMapBlur"/>
+          <feSpecularLighting id="feSpecularLighting" in="reflectMapBlur" result="reflectLight"
+              lighting-color="white" surfaceScale="1.5"
+              specularConstant="0" specularExponent="30">
+            <fePointLight id="fePointLight" x="0" y="0" z="150"/>
+          </feSpecularLighting>
+          
+          <!-- Mask light by source alpha and blend over displaced image -->
+          <feComposite id="feReflectComposite" in="reflectLight" in2="SourceAlpha" operator="in" result="maskedLight"/>
+          <feBlend id="feReflectBlend" in="clippedResult" in2="maskedLight" mode="screen" result="reflectedResult"/>
+          
           <feMerge>
-            <feMergeNode in="clippedResult"/>
+            <feMergeNode in="reflectedResult"/>
           </feMerge>
         </filter>
       </defs>
@@ -118,9 +140,18 @@ export function initializeSVG(container: HTMLElement): SVGElements {
   const feDispMapDissolve = container.querySelector('[in2="noiseMap"]') as SVGFEDisplacementMapElement;
   const feGaussianBlur = container.querySelector('#feSourceGaussianBlur') as SVGFEGaussianBlurElement;
   const feMapGaussianBlur = container.querySelector('#feMapGaussianBlur') as SVGFEGaussianBlurElement;
+  const feGrainAlpha = container.querySelector('#feGrainAlpha') as SVGFEFuncAElement;
+  const feGrainTurbulence = container.querySelector('#feGrainTurbulence') as SVGFETurbulenceElement;
   const outputRect = container.querySelector("#outputRect") as SVGRectElement;
   const maskRect = container.querySelector("#maskRect") as SVGRectElement;
   const noiseTexture = container.querySelector('#noiseTexture') as SVGImageElement;
+
+  // Reflect elements
+  const feReflectBlur = container.querySelector('#feReflectBlur') as SVGFEGaussianBlurElement;
+  const feSpecularLighting = container.querySelector('#feSpecularLighting') as SVGFESpecularLightingElement;
+  const fePointLight = container.querySelector('#fePointLight') as SVGFEPointLightElement;
+  const feReflectComposite = container.querySelector('#feReflectComposite') as SVGFECompositeElement;
+  const feReflectBlend = container.querySelector('#feReflectBlend') as SVGFEBlendElement;
 
   // Validate critical elements
   if (!svg || !filterEl || !feImg || !feSourceImg) {
@@ -138,9 +169,16 @@ export function initializeSVG(container: HTMLElement): SVGElements {
     feDispMapDissolve,
     feGaussianBlur,
     feMapGaussianBlur,
+    feGrainAlpha,
+    feGrainTurbulence,
     outputRect,
     maskRect,
-    noiseTexture
+    noiseTexture,
+    feReflectBlur,
+    feSpecularLighting,
+    fePointLight,
+    feReflectComposite,
+    feReflectBlend
   };
 }
 
@@ -166,4 +204,4 @@ export function initializeNoiseTexture(noiseTexture: SVGImageElement): void {
   
   noiseCtx.putImageData(noiseImageData, 0, 0);
   noiseTexture.setAttribute('href', noiseCanvas.toDataURL());
-} 
+}

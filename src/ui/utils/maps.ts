@@ -14,8 +14,8 @@ export function buildMapSourceFromPreset(
   const layers = preset.layers.map(l => ({
     src: l.src,
     tiling: l.tiling,
-    // IMPORTANT: do NOT inject preset.defaultScale here. Leave undefined so the global engineState.scalePct applies.
-    scale: typeof l.scale === 'number' ? l.scale : undefined,
+    // scaleMultiplier modifies how fast this layer responds to global scale slider (default 1.0)
+    scaleMultiplier: typeof l.scaleMultiplier === 'number' ? l.scaleMultiplier : undefined,
     scaleMode: l.scaleMode,
     opacity: typeof l.opacity === 'number' ? l.opacity : 1,
     blendMode: l.blendMode || 'source-over',

@@ -11,18 +11,21 @@ export class ThumbnailRenderer {
   private lastTextureId: string | null = null;
   private lastW: number | null = null;
   private lastH: number | null = null;
-  private worker: Worker | null = null;
+  // Worker removed for optimization (main thread is faster without serialization overhead)
+  // private worker: Worker | null = null;
   private renderQueue: Promise<void> = Promise.resolve();
   private generation = 0;
   private cache: Map<string, string> = new Map();
-  private maxConcurrent = Math.max(4, Math.min(8, (navigator as any).hardwareConcurrency || 6));
+  // Engine is single-instance and stateful (DOM-based), so we must strictly serialize usage.
+  // Concurrent rendering on the same engine instance causes race conditions (wrong map/settings).
+  private maxConcurrent = 1;
   private inFlight = 0;
   private pending: Array<() => void> = [];
   private thumbProxyUrl: string | null = null;
-  private readonly proxyMaxSide = 512;
+  private readonly proxyMaxSide = 256;
 
   private log(...args: any[]): void {
-    if (APP_CONFIG.LICENSE.DEV_MODE_ENABLED) {
+    if (false && APP_CONFIG.LICENSE.DEV_MODE_ENABLED) {
       // eslint-disable-next-line no-console
       console.log('[THUMB]', ...args);
     }
@@ -37,16 +40,7 @@ export class ThumbnailRenderer {
       // Use the same filter margin percent as Live Preview; set per-engine previewMax via init option
       this.engine = initDisplacementEngine(div, { enableReflectEffect: false, filterMarginPercent: APP_CONFIG.FILTER_MARGIN_PERCENT, cnvMax: 512 });
     }
-    if (!this.worker) {
-      try {
-        // Vite will inline worker via new URL pattern
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        this.worker = new Worker(new URL('./ThumbnailRenderer.worker.ts', import.meta.url), { type: 'module' });
-      } catch {
-        this.worker = null;
-      }
-    }
+    // Worker initialization removed
   }
 
   private createHiddenContainer(): HTMLElement {
@@ -137,7 +131,20 @@ export class ThumbnailRenderer {
       ctx.imageSmoothingEnabled = true; // @ts-ignore
       if ((ctx as any).imageSmoothingQuality) (ctx as any).imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, outW, outH);
-      this.thumbProxyUrl = c.toDataURL('image/png');
+      
+      // Use async toBlob for proxy generation
+      this.thumbProxyUrl = await new Promise<string>((resolve) => {
+        c.toBlob((blob) => {
+          if (blob) {
+             const reader = new FileReader();
+             reader.onload = () => resolve(reader.result as string);
+             reader.readAsDataURL(blob);
+          } else {
+             resolve(c.toDataURL('image/png'));
+          }
+        }, 'image/png');
+      });
+      
       this.log('syncSource.proxy.built', { outW, outH, ms: (performance.now() - t0).toFixed(1) });
     } catch {
       // Fallback: use original preview texture if proxy build fails
@@ -164,6 +171,7 @@ export class ThumbnailRenderer {
       this.log('render.map.loaded', { preset: preset.id, ms: (performance.now() - tLoad0).toFixed(1) });
       // Apply scale BEFORE soft so stdDeviation is computed with correct base
       this.engine.setScale(preset.defaultScale);
+      this.engine.setTextureScale(preset.textureScale ?? 1);
       this.engine.setStrength(preset.defaultStrength);
 
       // Thumbnails must reflect only displacement map with default strength/scale
@@ -185,7 +193,7 @@ export class ThumbnailRenderer {
       const outSize = 200; // restore size for crisper thumbnails
 
       // Cache key capturing generation and preset defaults only
-      const key = `${startGen}|${preset.id}|${preset.defaultScale}|${preset.defaultStrength}|${outSize}`;
+      const key = `${startGen}|${preset.id}|${preset.defaultScale}|${preset.textureScale ?? 1}|${preset.defaultStrength}|${outSize}`;
       const cached = this.cache.get(key);
       if (cached) {
         this.log('render.cache.hit', { preset: preset.id });
@@ -203,15 +211,19 @@ export class ThumbnailRenderer {
       }
       // Render bigger snapshot before crop to preserve quality (no upscaling artifacts)
       const tSnap0 = performance.now();
-      const bytes = await this.engine.getThumbnailBytes(Math.round(outSize * cropFactor));
-      this.log('render.snapshot.bytes', { preset: preset.id, ms: (performance.now() - tSnap0).toFixed(1) });
+      
+      // OPTIMIZED: Render directly to DataURL with internal cropping
+      // This bypasses the entire byte-array transfer overhead and unnecessary encodings
+      const dataUrl = await this.engine.getThumbnailDataUrl(outSize, cropFactor);
+      
+      this.log('render.snapshot.dataUrl', { preset: preset.id, ms: (performance.now() - tSnap0).toFixed(1) });
 
-      const applyDataUrl = (dataUrl: string) => {
-        if (!dataUrl) return;
+      const applyDataUrl = (url: string) => {
+        if (!url) return;
         // Guards: ensure still the same preset element and same generation
         if (startGen !== this.generation) return;
         if ((target as any).dataset.presetName && (target as any).dataset.presetName !== preset.name) return;
-        target.style.backgroundImage = `url(${dataUrl})`;
+        target.style.backgroundImage = `url(${url})`;
         target.style.backgroundSize = 'cover';
         target.style.backgroundPosition = 'center';
         target.style.backgroundRepeat = 'no-repeat';
@@ -221,57 +233,18 @@ export class ThumbnailRenderer {
         (target as any).dataset.thumbStale = '0';
         (target as HTMLElement).style.opacity = '1';
         // Save into in-memory cache for this generation
-        this.cache.set(key, dataUrl);
+        this.cache.set(key, url);
         this.log('render.done', { preset: preset.id, ms: (performance.now() - t0).toFixed(1) });
       };
 
-      if (this.worker && 'OffscreenCanvas' in window) {
-        const id = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-        let handled = false;
-        const onMsg = (e: MessageEvent) => {
-          if (e.data && e.data.id === id && startGen === this.generation) {
-            this.worker?.removeEventListener('message', onMsg as any);
-            handled = true;
-            applyDataUrl(e.data.dataUrl);
-          }
-        };
-        this.worker.addEventListener('message', onMsg as any);
-        this.worker.postMessage({ id, bytes, size: outSize, cropFactor });
-        // Fallback timeout in case worker stalls
-        setTimeout(async () => {
-          if (handled || startGen !== this.generation) return;
-          this.log('render.worker.timeout.fallback', { preset: preset.id });
-          try {
-            const blob = new Blob([bytes], { type: 'image/png' });
-            const img = await this.blobToImage(blob);
-            const c = document.createElement('canvas');
-            c.width = outSize; c.height = outSize; const ctx = c.getContext('2d')!;
-            const srcW = img.width, srcH = img.height;
-            const cw = srcW / cropFactor, ch = srcH / cropFactor;
-            const sx = Math.max(0, (srcW - cw) / 2); const sy = Math.max(0, (srcH - ch) / 2);
-            ctx.imageSmoothingEnabled = true; // @ts-ignore
-            if ((ctx as any).imageSmoothingQuality) (ctx as any).imageSmoothingQuality = 'high';
-            ctx.drawImage(img, sx, sy, cw, ch, 0, 0, outSize, outSize);
-            applyDataUrl(c.toDataURL('image/png'));
-            this.worker?.removeEventListener('message', onMsg as any);
-          } catch {}
-        }, 1500);
-        return;
-      }
+      applyDataUrl(dataUrl);
+      return;
 
-      // Fallback: do crop on main thread
-      const blob = new Blob([bytes], { type: 'image/png' });
-      let img: HTMLImageElement;
-      try { img = await this.blobToImage(blob); } catch { return; }
-      const c = document.createElement('canvas');
-      c.width = outSize; c.height = outSize; const ctx = c.getContext('2d')!;
-      const srcW = img.width, srcH = img.height;
-      const cw = srcW / cropFactor, ch = srcH / cropFactor;
-      const sx = Math.max(0, (srcW - cw) / 2); const sy = Math.max(0, (srcH - ch) / 2);
-      ctx.imageSmoothingEnabled = true; // @ts-ignore
-      if ((ctx as any).imageSmoothingQuality) (ctx as any).imageSmoothingQuality = 'high';
-      ctx.drawImage(img, sx, sy, cw, ch, 0, 0, outSize, outSize);
-      applyDataUrl(c.toDataURL('image/png'));
+      /* 
+         LEGACY WORKER PATH REMOVED FOR OPTIMIZATION
+         The main thread overhead of one extra drawImage call is negligible compared to 
+         the massive overhead of serializing PNGs to send to a worker and back.
+      */
     });
   }
 

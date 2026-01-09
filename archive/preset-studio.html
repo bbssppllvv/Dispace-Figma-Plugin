@@ -1,0 +1,3535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preset Studio - Professional Preset Management</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #0a0e13; --panel: #161b22; --border: #30363d; --text: #f0f6fc; 
+      --text-muted: #7d8590; --primary: #238636; --accent: #1f6feb;
+      --danger: #da3633; --warn: #fb8500; --surface: #21262d;
+    }
+    
+    body {
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text); height: 100vh; overflow: hidden;
+    }
+    
+    .studio {
+      display: grid; height: 100vh;
+      grid-template-columns: 280px 1fr 500px;
+      grid-template-rows: 44px 1fr;
+      grid-template-areas: "header header header" "sidebar main preview";
+    }
+    
+    .header {
+      grid-area: header; background: var(--panel); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 16px; gap: 16px;
+    }
+    
+    .header h1 { font-size: 15px; font-weight: 600; }
+    .header .shortcuts { 
+      font-size: 10px; color: var(--text-muted); margin-left: 12px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .header .status { 
+      margin-left: auto; padding: 3px 8px; border-radius: 10px; 
+      background: var(--primary); color: white; font-size: 11px;
+    }
+    
+    .sidebar {
+      grid-area: sidebar; background: var(--panel); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    
+    .main {
+      grid-area: main; background: var(--bg); display: flex; flex-direction: column;
+      padding: 16px;
+    }
+    
+    .preview {
+      grid-area: preview; background: var(--panel); border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    
+    .preset-list {
+      flex: 1; overflow-y: auto; padding: 8px;
+    }
+    
+    .category-group {
+      margin-bottom: 12px;
+    }
+    
+    .category-header {
+      font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+      font-weight: 600; margin-bottom: 6px; padding: 6px 8px; 
+      background: var(--surface); border-radius: 4px; display: flex; 
+      align-items: center; justify-content: space-between; cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .category-header:hover { background: var(--border); }
+    
+    .category-badge {
+      background: var(--primary); color: white; font-size: 9px; 
+      padding: 1px 4px; border-radius: 8px; font-weight: 500;
+    }
+    
+    .category-toggle {
+      font-size: 9px; color: var(--text-muted); transition: transform 0.2s;
+    }
+    
+    .category-group.collapsed .category-toggle { transform: rotate(-90deg); }
+    .category-group.collapsed .preset-item { display: none; }
+    
+    .filter-tabs {
+      display: flex; gap: 3px; margin-bottom: 8px; padding: 0;
+      flex-wrap: wrap;
+    }
+    
+    .filter-tabs.compact {
+      gap: 2px;
+    }
+    
+    .filter-tab {
+      padding: 4px 8px; border-radius: 12px; font-size: 10px; cursor: pointer;
+      background: var(--surface); color: var(--text-muted); border: 1px solid transparent;
+      transition: all 0.15s; white-space: nowrap; text-align: center; flex: 1;
+      min-width: 0; display: flex; align-items: center; justify-content: center;
+    }
+    
+    .filter-tab:hover { background: var(--border); }
+    .filter-tab.active { 
+      background: var(--accent); color: white; border-color: var(--accent);
+    }
+    
+    .preset-stats {
+      font-size: 9px; color: var(--text-muted); margin-top: 4px;
+      text-align: center; padding: 4px;
+    }
+    
+    .preset-item {
+      padding: 8px 10px; margin: 1px 0; border-radius: 6px; cursor: pointer;
+      border: 1px solid transparent; transition: all 0.15s; position: relative;
+    }
+    
+    .preset-item:hover { background: var(--surface); border-color: var(--border); }
+    .preset-item.active { background: var(--accent); color: white; }
+    
+    .preset-name { font-weight: 500; font-size: 13px; }
+    .preset-meta { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+    .preset-item.active .preset-meta { color: rgba(255,255,255,0.8); }
+    
+    .editor {
+      flex: 1; display: none;
+    }
+    
+    .editor.active { display: flex; flex-direction: column; }
+    
+    .editor-header {
+      padding: 0 0 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+    }
+    
+    .editor-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    
+    .form-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+    }
+    
+    .form-group {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    
+    .form-label {
+      font-size: 11px; color: var(--text-muted); font-weight: 500;
+    }
+    
+    .form-input, .form-select {
+      padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); font-size: 13px;
+    }
+    
+    .form-input:focus, .form-select:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px rgba(31, 111, 235, 0.3);
+    }
+    
+    .layers-section {
+      flex: 1; display: flex; flex-direction: column;
+    }
+    
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+    }
+    
+    .section-title { font-size: 13px; font-weight: 600; }
+    
+    .btn {
+      padding: 6px 12px; border-radius: 5px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); cursor: pointer; font-size: 12px;
+      transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    
+    .btn.compact {
+      padding: 4px 8px; font-size: 11px; min-width: 28px; justify-content: center;
+    }
+    
+    .btn:hover { background: var(--border); }
+    .btn.primary { background: var(--primary); border-color: var(--primary); color: white; }
+    .btn.primary:hover { background: #2ea043; }
+    .btn.accent { background: var(--accent); border-color: var(--accent); color: white; }
+    
+    .layers-list {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+    }
+    
+    .layer-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      padding: 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    
+    .layer-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    
+    .layer-title { font-weight: 500; font-size: 13px; }
+    
+    .layer-controls {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+    }
+    
+    .asset-picker {
+      grid-column: span 3; margin-top: 8px; padding: 12px; 
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      display: none;
+    }
+    
+    .asset-picker.active { display: block; }
+    
+    .asset-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px;
+      max-height: 200px; overflow-y: auto;
+    }
+    
+    .asset-item {
+      aspect-ratio: 1; border: 1px solid var(--border); border-radius: 4px;
+      background: var(--surface); cursor: pointer; overflow: hidden;
+      position: relative; transition: all 0.15s;
+    }
+    
+    .asset-item:hover { border-color: var(--accent); }
+    .asset-item.selected { border-color: var(--primary); border-width: 2px; }
+    
+    .asset-item img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .asset-badge {
+      position: absolute; top: 2px; right: 2px; background: var(--primary);
+      color: white; font-size: 8px; padding: 2px 4px; border-radius: 2px;
+    }
+    
+    .preview-panel {
+      display: flex; flex-direction: column; height: 100%;
+    }
+    
+    .preview-header {
+      padding: 12px; border-bottom: 1px solid var(--border);
+    }
+    
+    .preview-container {
+      flex: 1; padding: 12px; display: flex; flex-direction: column;
+    }
+    
+    .preview-viewport {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; position: relative; overflow: hidden; min-height: 280px;
+    }
+    
+    .preview-controls {
+      padding: 12px 0; display: flex; flex-direction: column; gap: 8px;
+    }
+    
+    .control-group {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    
+    .control-row {
+      display: flex; align-items: center; gap: 6px;
+    }
+    
+    .control-label {
+      font-size: 10px; color: var(--text-muted); min-width: 50px;
+    }
+    
+    .control-slider {
+      flex: 1; height: 3px; border-radius: 2px; background: var(--border);
+      appearance: none; cursor: pointer;
+    }
+    
+    .control-slider::-webkit-slider-thumb {
+      appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent); cursor: pointer;
+    }
+    
+    .control-value {
+      font-size: 10px; color: var(--text-muted); min-width: 35px; text-align: right;
+    }
+    
+    .empty-state {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; color: var(--text-muted); text-align: center;
+    }
+    
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    
+    .toolbar {
+      padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px;
+    }
+    
+    .status-indicator {
+      padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
+    }
+    .status-indicator.success { background: var(--primary); color: white; }
+    .status-indicator.loading { background: var(--warn); color: white; }
+    
+    .save-progress {
+      position: fixed; top: 20px; right: 20px; background: var(--panel); 
+      border: 1px solid var(--border); border-radius: 8px; padding: 16px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1001; min-width: 280px;
+      transform: translateY(-100px); opacity: 0; transition: all 0.3s ease;
+    }
+    
+    .save-progress.show { transform: translateY(0); opacity: 1; }
+    
+    .save-progress-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    }
+    
+    .save-progress-title { font-weight: 600; font-size: 14px; }
+    
+    .progress-bar {
+      width: 100%; height: 6px; background: var(--border); border-radius: 3px; 
+      overflow: hidden; margin-bottom: 8px;
+    }
+    
+    .progress-fill {
+      height: 100%; background: var(--primary); width: 0%; 
+      transition: width 0.5s ease; border-radius: 3px;
+    }
+    
+    .progress-steps {
+      font-size: 11px; color: var(--text-muted); line-height: 1.4;
+    }
+    
+    .progress-step {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+    }
+    
+    .progress-step.completed { color: var(--primary); }
+    .progress-step.active { color: var(--text); }
+    
+    .btn.saving { 
+      background: var(--warn); border-color: var(--warn); color: white; 
+      cursor: not-allowed; opacity: 0.8;
+    }
+    
+    .preset-actions {
+      position: absolute; top: 6px; right: 6px; opacity: 0; 
+      transition: opacity 0.2s; z-index: 10;
+    }
+    
+    .preset-item:hover .preset-actions { opacity: 1; }
+    
+    .action-menu {
+      position: relative; display: inline-block;
+    }
+    
+    .action-btn {
+      padding: 2px 4px; border-radius: 3px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text-muted); cursor: pointer;
+      font-size: 10px; transition: all 0.15s; display: flex; align-items: center;
+      width: 20px; height: 20px; justify-content: center;
+    }
+    
+    .action-btn:hover { 
+      background: var(--border); color: var(--text); 
+    }
+    
+    .action-dropdown {
+      position: absolute; top: 100%; right: 0; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 4px; padding: 2px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000;
+      min-width: 130px; display: none;
+    }
+    
+    .action-dropdown.show { display: block; }
+    
+    .action-item {
+      padding: 6px 8px; border-radius: 3px; cursor: pointer;
+      font-size: 11px; display: flex; align-items: center; gap: 6px;
+      transition: background 0.15s;
+    }
+    
+    .action-item:hover { background: var(--surface); }
+    .action-item.danger:hover { background: var(--danger); color: white; }
+    
+    .confirmation-modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+      background: rgba(0,0,0,0.8); display: none; z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    
+    .confirmation-content {
+      background: var(--panel); border-radius: 8px; padding: 24px;
+      max-width: 400px; width: 90%;
+    }
+    
+    .confirmation-title {
+      font-size: 16px; font-weight: 600; margin-bottom: 12px;
+    }
+    
+    .confirmation-message {
+      color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;
+    }
+    
+    .confirmation-actions {
+      display: flex; gap: 12px; justify-content: flex-end;
+    }
+    
+    kbd {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+      padding: 2px 4px; font-family: monospace; font-size: 10px; color: var(--text);
+    }
+    
+    .category-selector {
+      position: relative; display: flex; align-items: center; gap: 6px;
+    }
+    
+    .selected-categories {
+      flex: 1; min-height: 28px; padding: 4px 6px; border: 1px solid var(--border);
+      border-radius: 4px; background: var(--surface); display: flex; flex-wrap: wrap;
+      align-items: center; gap: 4px;
+    }
+    
+    .selected-categories .placeholder {
+      color: var(--text-muted); font-size: 12px;
+    }
+    
+    .category-tag {
+      background: var(--primary); color: white; padding: 2px 6px; border-radius: 3px;
+      font-size: 10px; display: flex; align-items: center; gap: 3px;
+    }
+    
+    .category-tag .remove-btn {
+      background: none; border: none; color: white; cursor: pointer;
+      padding: 0; width: 12px; height: 12px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; line-height: 1;
+    }
+    
+    .category-tag .remove-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .category-dropdown-btn {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; padding: 0;
+    }
+    
+    .category-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-top: 4px; display: none;
+    }
+    
+    .category-dropdown.show { display: block; }
+    
+    .category-dropdown-header {
+      padding: 12px; border-bottom: 1px solid var(--border);
+      display: flex; gap: 8px;
+    }
+    
+    .category-dropdown-header input {
+      flex: 1; padding: 6px 8px; border: 1px solid var(--border);
+      border-radius: 4px; background: var(--surface); color: var(--text);
+      font-size: 12px;
+    }
+    
+    .btn-sm {
+      padding: 4px 8px; font-size: 11px; height: auto;
+    }
+    
+    .category-list {
+      max-height: 200px; overflow-y: auto; padding: 8px;
+    }
+    
+    .category-option {
+      padding: 8px 12px; border-radius: 4px; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background 0.15s;
+    }
+    
+    .category-option:hover { background: var(--surface); }
+    .category-option.selected { background: var(--primary); color: white; }
+    
+    .category-option-info {
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    
+    .category-option-name { font-size: 13px; font-weight: 500; }
+    .category-option-meta { font-size: 11px; color: var(--text-muted); }
+    .category-option.selected .category-option-meta { color: rgba(255,255,255,0.8); }
+
+    /* Asset Grid Item Styles with Delete Button */
+    .asset-item {
+        aspect-ratio: 1;
+        background: #f0f0f0;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        position: relative;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+    }
+    
+    .asset-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .asset-item:hover .delete-asset-btn {
+        opacity: 1;
+    }
+    
+    .delete-asset-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: rgba(255, 0, 0, 0.8);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 10;
+        font-size: 14px;
+    }
+
+    .delete-asset-btn:hover {
+        background: rgb(255, 0, 0);
+    }
+  </style>
+</head>
+<body>
+  <div class="studio">
+    <!-- Header -->
+    <div class="header">
+      <h1>Preset Studio</h1>
+      <div class="shortcuts">
+        <kbd>Ctrl+N</kbd> <kbd>Ctrl+S</kbd> <kbd>Ctrl+D</kbd> <kbd>F2</kbd> <kbd>Del</kbd>
+      </div>
+      <div class="status-indicator success" id="assetStatus">CDN Ready</div>
+      <div class="status" id="presetCount">0 presets</div>
+    </div>
+
+    <!-- Sidebar: Preset Library -->
+    <div class="sidebar">
+      <div style="padding: 12px; border-bottom: 1px solid var(--border);">
+        <!-- Search and Primary Actions -->
+        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+          <input type="text" id="searchPresets" placeholder="Search presets..." 
+                 style="flex: 1; padding: 5px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 12px;">
+          <button class="btn primary compact" id="newPreset" title="Create New Preset (Ctrl+N)">+</button>
+        </div>
+        
+        <!-- Secondary Actions -->
+        <div style="display: flex; gap: 4px; margin-bottom: 10px;">
+          <button class="btn compact" id="refreshPresets" title="Refresh from CDN">🔄</button>
+          <button class="btn compact" id="importPreset" title="Import preset (Ctrl+O)">📥</button>
+          <button class="btn compact" id="diagnosticsBtn" title="Run diagnostics">🔍</button>
+          <button class="btn compact" id="fixIdsBtn" title="Fix invalid IDs">🔧</button>
+        </div>
+        
+        <input type="file" id="presetFileInput" accept=".json" style="display: none;">
+        
+        <!-- Compact Filter Tabs -->
+        <div class="filter-tabs compact" id="filterTabs">
+          <div class="filter-tab active" data-filter="">All</div>
+          <div class="filter-tab" data-filter="Popular">Pop</div>
+          <div class="filter-tab" data-filter="Ribbed glass">Glass</div>
+          <div class="filter-tab" data-filter="Fabric">Fabric</div>
+          <div class="filter-tab" data-filter="Geometric">Geo</div>
+          <div class="filter-tab" data-filter="Organic">Organic</div>
+          <div class="filter-tab" data-filter="Custom">Custom</div>
+        </div>
+        
+        <div class="preset-stats" id="presetStats">
+          Loading presets...
+        </div>
+      </div>
+      
+      <div class="preset-list" id="presetList">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div>Loading presets...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main: Preset Editor -->
+    <div class="main">
+      <!-- Empty State -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🎨</div>
+        <div style="font-size: 16px; margin-bottom: 8px;">Select or create a preset</div>
+        <div style="font-size: 12px;">Choose from the library or create a new preset to get started</div>
+      </div>
+
+      <!-- Preset Editor -->
+      <div class="editor" id="presetEditor">
+        <div class="editor-header">
+          <div class="editor-title" id="editorTitle">Preset Name</div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Preset ID</label>
+              <input type="text" class="form-input" id="presetId" placeholder="my-awesome-effect">
+              <div style="font-size: 9px; color: var(--text-muted); margin-top: 2px;">
+                Auto-sanitized: a-z, 0-9, hyphens, underscores only
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Display Name</label>
+              <input type="text" class="form-input" id="presetName" placeholder="My Awesome Effect">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categories</label>
+              <div id="categorySelector" class="category-selector">
+                <div class="selected-categories" id="selectedCategories">
+                  <span class="placeholder">Select categories...</span>
+                </div>
+                <button type="button" class="btn category-dropdown-btn" id="categoryDropdownBtn">+</button>
+                <div class="category-dropdown" id="categoryDropdown">
+                  <div class="category-dropdown-header">
+                    <input type="text" placeholder="Search categories..." id="categorySearch">
+                    <button type="button" class="btn btn-sm" id="manageCategoriesBtn">Manage</button>
+                  </div>
+                  <div class="category-list" id="categoryList">
+                    <!-- Categories loaded here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Premium</label>
+              <label style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                <input type="checkbox" id="premiumPreset">
+                <span style="font-size: 12px;">Requires Pro subscription</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Default Scale (%)</label>
+              <input type="number" class="form-input" id="defaultScale" min="1" max="300" value="100">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Texture Scale (Multiplier)</label>
+              <input type="number" class="form-input" id="textureScale" min="0.1" max="10" step="0.1" value="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Default Strength</label>
+              <input type="number" class="form-input" id="defaultStrength" min="-600" max="600" value="150">
+            </div>
+          </div>
+        </div>
+
+        <div class="layers-section">
+          <div class="section-header">
+            <div class="section-title">Displacement Layers</div>
+            <button class="btn primary" id="addLayer">+ Add Layer</button>
+          </div>
+          
+          <div class="layers-list" id="layersList">
+            <div class="empty-state">
+              <div class="empty-icon">📐</div>
+              <div>No layers yet</div>
+              <div style="font-size: 12px;">Add a layer to start building your effect</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="preview">
+      <div class="preview-header">
+        <div>
+          <h3 style="font-size: 13px; font-weight: 600; margin-bottom: 2px;">Live Preview</h3>
+          <div style="font-size: 10px; color: var(--text-muted);">
+            Real-time displacement rendering
+          </div>
+        </div>
+        <button class="btn" id="changePreviewImage" style="padding: 2px 8px; font-size: 11px; height: 24px;">🖼️ Change Image</button>
+        <input type="file" id="previewImageInput" accept="image/*" style="display: none;">
+      </div>
+      
+      <div class="preview-container">
+        <div class="preview-viewport" id="previewViewport">
+          <!-- EXACT COPY of SVG filter from plugin -->
+          <svg id="previewSvg" viewBox="0 0 400 300" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" 
+               style="image-rendering: pixelated; image-rendering: crisp-edges;">
+            <defs>
+              <!-- Mask to hide mirrored edges -->
+              <mask id="imageMask">
+                <rect id="maskRect" x="0" y="0" width="400" height="300" fill="white"/>
+              </mask>
+              
+              <filter id="f" x="-80" y="-60" width="560" height="420" 
+                      color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse">
+                
+                <!-- Source image, loaded via JS -->
+                <feImage id="feSourceImg" width="400" height="300" x="0" y="0" href="/sample01.png" image-rendering="pixelated" result="sourceImage" />
+                
+                <!-- Displacement map, loaded via JS, which will be tiled -->
+                <feImage id="feImg" x="0" y="0" width="400" height="300" result="fileMap" image-rendering="pixelated" />
+
+                <!-- Soft blur applied to displacement map -->
+                <feGaussianBlur id="feMapGaussianBlur" in="fileMap" stdDeviation="0" result="fileMapSoft" />
+                
+                <!-- Generative dissolve map -->
+                <feImage id="noiseTexture" width="128" height="128" result="noiseTile" />
+                <feTile in="noiseTile" result="noiseMap" />
+
+                <!-- Pre-blur the source image -->
+                <feGaussianBlur id="feSourceGaussianBlur" in="sourceImage" stdDeviation="0" result="BlurredSource" />
+
+                <!-- STEP 1.5: Apply dissolve effect after blur but before main displacement -->
+                <feDisplacementMap id="feDispMapDissolve" in="BlurredSource" in2="noiseMap" scale="0" xChannelSelector="R" yChannelSelector="G" result="DissolvedSource"/>
+
+                <!-- STEP 1: Separate dissolved image into R, G, B channels -->
+                <feComponentTransfer in="DissolvedSource" result="R_channel">
+                  <feFuncG type="table" tableValues="0 0"/>
+                  <feFuncB type="table" tableValues="0 0"/>
+                </feComponentTransfer>
+                <feComponentTransfer in="DissolvedSource" result="G_channel">
+                  <feFuncR type="table" tableValues="0 0"/>
+                  <feFuncB type="table" tableValues="0 0"/>
+                </feComponentTransfer>
+                <feComponentTransfer in="DissolvedSource" result="B_channel">
+                  <feFuncR type="table" tableValues="0 0"/>
+                  <feFuncG type="table" tableValues="0 0"/>
+                </feComponentTransfer>
+
+                <!-- STEP 2: Displace each channel independently based on blurred fileMap -->
+                <feDisplacementMap id="feDispMapR" in="R_channel" in2="fileMapSoft" scale="0" xChannelSelector="R" yChannelSelector="G" result="displaced_R" />
+                <feDisplacementMap id="feDispMapG" in="G_channel" in2="fileMapSoft" scale="0" xChannelSelector="R" yChannelSelector="G" result="displaced_G" />
+                <feDisplacementMap id="feDispMapB" in="B_channel" in2="fileMapSoft" scale="0" xChannelSelector="R" yChannelSelector="G" result="displaced_B" />
+
+                <!-- STEP 3: Recombine the displaced channels -->
+                <feBlend in="displaced_R" in2="displaced_G" mode="screen" result="RG_displaced" />
+                <feBlend in="RG_displaced" in2="displaced_B" mode="screen" result="FinalDisplaced" />
+
+                <!-- GRAIN EFFECT -->
+                <feTurbulence id="feGrainTurbulence" type="fractalNoise" baseFrequency="0.8" numOctaves="3" seed="0" stitchTiles="stitch" result="grainRaw" />
+                <feColorMatrix type="saturate" values="0" in="grainRaw" result="grainGray" />
+                <feComponentTransfer in="grainGray" result="grainAdjusted">
+                  <feFuncA id="feGrainAlpha" type="linear" slope="0" intercept="0"/>
+                </feComponentTransfer>
+                <feBlend id="feGrainBlend" in="grainAdjusted" in2="FinalDisplaced" mode="overlay" result="FinalWithGrain" />
+
+                <!-- STEP 4: Pass-through to preserve result -->
+                <feOffset in="FinalWithGrain" dx="0" dy="0" result="clippedResult" />
+
+                <feMerge>
+                  <feMergeNode in="clippedResult"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <rect id="outputRect" x="0" y="0" width="400" height="300" filter="url(#f)" mask="url(#imageMask)"/>
+          </svg>
+        </div>
+        
+        <div class="preview-controls">
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 4px;">
+             <button class="btn compact" id="resetPreviewControls" title="Reset sliders to preset defaults" style="font-size: 10px; padding: 2px 6px;">↺ Reset</button>
+          </div>
+          <div class="control-group">
+            <div class="control-row">
+              <span class="control-label">Strength</span>
+              <input type="range" class="control-slider" id="previewStrength" min="-600" max="600" value="150">
+              <span class="control-value" id="strengthValue">150</span>
+            </div>
+            <div class="control-row">
+              <span class="control-label">Scale</span>
+              <input type="range" class="control-slider" id="previewScale" min="1" max="300" value="100">
+              <span class="control-value" id="scaleValue">100%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="toolbar">
+        <button class="btn accent" id="savePreset">💾 Save & Deploy</button>
+        <button class="btn" id="exportCode">📋 Export JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Asset Picker Modal (Hidden by default) -->
+  <div id="assetModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: none; z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel); border-radius: 12px; padding: 24px; width: 90%; max-width: 1000px; height: 85vh; overflow: hidden; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <div>
+          <h3 style="margin-bottom: 4px;">Select Displacement Map</h3>
+          <div style="font-size: 12px; color: var(--text-muted);" id="assetModalStats">Loading assets...</div>
+        </div>
+        <button class="btn" id="closeAssetModal">✕</button>
+      </div>
+      
+      <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+        <input type="text" id="assetSearch" placeholder="Search assets..." style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text);">
+        <select id="assetTypeFilter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text);">
+          <option value="">All Types</option>
+          <option value="svg">SVG</option>
+          <option value="png">PNG</option>
+        </select>
+        <select id="assetCategoryFilter" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text);">
+          <option value="">All Categories</option>
+          <option value="geometric">Geometric</option>
+          <option value="organic">Organic</option>
+          <option value="linear">Linear</option>
+          <option value="radial">Radial</option>
+        </select>
+        <button class="btn" id="uploadAssetBtn" style="background: var(--accent); color: white;">☁️ Upload</button>
+        <input type="file" id="uploadAssetInput" accept=".svg,.png" style="display: none;">
+      </div>
+      
+      <div class="asset-grid" id="assetGrid" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; padding: 8px;">
+        <!-- Assets loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Progress Notification -->
+  <div id="saveProgress" class="save-progress">
+    <div class="save-progress-header">
+      <span class="save-progress-title">Saving Preset...</span>
+      <span style="margin-left: auto; font-size: 12px; color: var(--text-muted);" id="saveProgressPercent">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-steps" id="progressSteps">
+      <div class="progress-step active" id="step1">🔄 Validating preset data...</div>
+      <div class="progress-step" id="step2">📤 Uploading to server...</div>
+      <div class="progress-step" id="step3">🚀 Deploying to CDN...</div>
+      <div class="progress-step" id="step4">✅ Refreshing gallery...</div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="confirmation-modal">
+    <div class="confirmation-content">
+      <div class="confirmation-title" id="confirmTitle">Confirm Action</div>
+      <div class="confirmation-message" id="confirmMessage">Are you sure you want to proceed?</div>
+      <div class="confirmation-actions">
+        <button class="btn" id="confirmCancel">Cancel</button>
+        <button class="btn primary" id="confirmOk">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class PresetStudio {
+      constructor() {
+        this.presets = new Map();
+        this.assets = new Map();
+        this.locallyAddedAssets = new Set(); // Track locally added assets
+        this.categories = new Map();
+        this.currentPreset = null;
+        this.hasUnsavedChanges = false;
+        this.autoSaveTimeout = null;
+        this.isSaving = false; // Prevent concurrent saves
+        this.cdnUrl = 'https://dispace-figma-assets.vercel.app';
+        this.proxyUrl = '/api/cdn'; // Local proxy to avoid CORS
+        this.githubProxyUrl = '/api/github'; // GitHub proxy for dev
+        
+        // Determine if we're running in development
+        this.isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        
+        this.initializeElements();
+        this.initializeNoiseTexture();
+        this.setupEventListeners();
+        this.loadAssets();
+        this.loadPresets().then(() => {
+          // Auto-run diagnostics on startup (silent)
+          this.runSilentDiagnostics();
+        });
+      }
+
+      initializeElements() {
+        this.elements = {
+          presetList: document.getElementById('presetList'),
+          emptyState: document.getElementById('emptyState'),
+          presetEditor: document.getElementById('presetEditor'),
+          editorTitle: document.getElementById('editorTitle'),
+          presetId: document.getElementById('presetId'),
+          presetName: document.getElementById('presetName'),
+          premiumPreset: document.getElementById('premiumPreset'),
+          // Category selector elements
+          selectedCategories: document.getElementById('selectedCategories'),
+          categoryDropdownBtn: document.getElementById('categoryDropdownBtn'),
+          categoryDropdown: document.getElementById('categoryDropdown'),
+          categorySearch: document.getElementById('categorySearch'),
+          categoryList: document.getElementById('categoryList'),
+          manageCategoriesBtn: document.getElementById('manageCategoriesBtn'),
+          defaultScale: document.getElementById('defaultScale'),
+          textureScale: document.getElementById('textureScale'),
+          defaultStrength: document.getElementById('defaultStrength'),
+          layersList: document.getElementById('layersList'),
+          assetStatus: document.getElementById('assetStatus'),
+          presetCount: document.getElementById('presetCount'),
+          assetModal: document.getElementById('assetModal'),
+          assetGrid: document.getElementById('assetGrid'),
+          previewStrength: document.getElementById('previewStrength'),
+          previewScale: document.getElementById('previewScale'),
+          strengthValue: document.getElementById('strengthValue'),
+          scaleValue: document.getElementById('scaleValue'),
+          // New UX elements
+          filterTabs: document.getElementById('filterTabs'),
+          presetStats: document.getElementById('presetStats'),
+          assetModalStats: document.getElementById('assetModalStats'),
+          assetTypeFilter: document.getElementById('assetTypeFilter'),
+          assetCategoryFilter: document.getElementById('assetCategoryFilter'),
+          saveProgress: document.getElementById('saveProgress'),
+          progressFill: document.getElementById('progressFill'),
+          saveProgressPercent: document.getElementById('saveProgressPercent'),
+          progressSteps: document.getElementById('progressSteps'),
+          confirmationModal: document.getElementById('confirmationModal'),
+          confirmTitle: document.getElementById('confirmTitle'),
+          confirmMessage: document.getElementById('confirmMessage'),
+          confirmOk: document.getElementById('confirmOk'),
+          confirmCancel: document.getElementById('confirmCancel'),
+          // SVG filter elements (exact copy from plugin)
+          feImg: document.getElementById('feImg'),
+          feSourceImg: document.getElementById('feSourceImg'),
+          feDispMapR: document.getElementById('feDispMapR'),
+          feDispMapG: document.getElementById('feDispMapG'),
+          feDispMapB: document.getElementById('feDispMapB'),
+          feDispMapDissolve: document.getElementById('feDispMapDissolve'),
+          feMapGaussianBlur: document.getElementById('feMapGaussianBlur'),
+          feSourceGaussianBlur: document.getElementById('feSourceGaussianBlur'),
+          feGrainAlpha: document.getElementById('feGrainAlpha'),
+          feGrainTurbulence: document.getElementById('feGrainTurbulence'),
+          noiseTexture: document.getElementById('noiseTexture')
+        };
+      }
+
+      initializeNoiseTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(128, 128);
+        const data = imageData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          data[i] = Math.random() * 255;
+          data[i + 1] = Math.random() * 255;
+          data[i + 2] = 0;
+          data[i + 3] = 255;
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        if (this.elements.noiseTexture) {
+          this.elements.noiseTexture.setAttribute('href', canvas.toDataURL());
+        }
+      }
+
+      setupEventListeners() {
+        document.getElementById('newPreset').addEventListener('click', () => this.createNewPreset());
+        document.getElementById('refreshPresets').addEventListener('click', () => this.forceRefreshPresets());
+        document.getElementById('diagnosticsBtn').addEventListener('click', () => this.runDiagnostics());
+        document.getElementById('fixIdsBtn').addEventListener('click', () => this.fixInvalidIds());
+        document.getElementById('importPreset').addEventListener('click', () => this.importPreset());
+        document.getElementById('presetFileInput').addEventListener('change', (e) => this.handlePresetImport(e));
+        document.getElementById('addLayer').addEventListener('click', () => this.addLayer());
+        document.getElementById('savePreset').addEventListener('click', () => this.savePreset());
+        document.getElementById('exportCode').addEventListener('click', () => this.exportCode());
+        document.getElementById('closeAssetModal').addEventListener('click', () => this.closeAssetModal());
+
+        // Preview controls (Strength and Scale only)
+        this.elements.previewStrength.addEventListener('input', () => this.updatePreview());
+        this.elements.previewScale.addEventListener('input', () => this.updatePreview());
+        
+        // Reset Preview Controls
+        document.getElementById('resetPreviewControls').addEventListener('click', () => this.resetPreviewControls());
+
+        // Update value displays
+        this.elements.previewStrength.addEventListener('input', (e) => {
+          this.elements.strengthValue.textContent = e.target.value;
+        });
+        this.elements.previewScale.addEventListener('input', (e) => {
+          this.elements.scaleValue.textContent = e.target.value + '%';
+        });
+
+        // Form changes
+        ['presetId', 'presetName', 'defaultScale', 'textureScale', 'defaultStrength'].forEach(id => {
+          document.getElementById(id).addEventListener('input', () => this.updateCurrentPreset());
+        });
+        document.getElementById('premiumPreset').addEventListener('change', () => this.updateCurrentPreset());
+        
+        // Category selector events
+        this.elements.categoryDropdownBtn.addEventListener('click', () => this.toggleCategoryDropdown());
+        this.elements.categorySearch.addEventListener('input', () => this.filterCategoryOptions());
+        this.elements.manageCategoriesBtn.addEventListener('click', () => this.openCategoryManager());
+
+        // Search and filter
+        document.getElementById('searchPresets').addEventListener('input', (e) => {
+          this.filterPresets();
+        });
+        
+        // Filter tabs
+        this.elements.filterTabs.addEventListener('click', (e) => {
+          if (e.target.classList.contains('filter-tab')) {
+            // Update active tab
+            this.elements.filterTabs.querySelectorAll('.filter-tab').forEach(tab => {
+              tab.classList.remove('active');
+            });
+            e.target.classList.add('active');
+            
+            this.filterPresets();
+          }
+        });
+        
+        // Asset modal filters
+        document.getElementById('assetSearch').addEventListener('input', () => this.filterAssets());
+        this.elements.assetTypeFilter.addEventListener('change', () => this.filterAssets());
+        this.elements.assetCategoryFilter.addEventListener('change', () => this.filterAssets());
+
+        // Asset Upload
+        document.getElementById('uploadAssetBtn').addEventListener('click', () => {
+          document.getElementById('uploadAssetInput').click();
+        });
+        document.getElementById('uploadAssetInput').addEventListener('change', (e) => this.handleAssetUpload(e));
+        
+        // Confirmation modal
+        this.elements.confirmCancel.addEventListener('click', () => this.hideConfirmation());
+        this.elements.confirmationModal.addEventListener('click', (e) => {
+          if (e.target === this.elements.confirmationModal) {
+            this.hideConfirmation();
+          }
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.action-menu')) {
+            document.querySelectorAll('.action-dropdown').forEach(dropdown => {
+              dropdown.classList.remove('show');
+            });
+          }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
+
+        // Preview Image Changer
+        document.getElementById('changePreviewImage').addEventListener('click', () => {
+          document.getElementById('previewImageInput').click();
+        });
+        document.getElementById('previewImageInput').addEventListener('change', (e) => this.handlePreviewImageChange(e));
+      }
+
+      handlePreviewImageChange(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target.result;
+          if (this.elements.feSourceImg) {
+            this.elements.feSourceImg.setAttribute('href', result);
+            console.log('🖼️ Preview image updated');
+          }
+        };
+        reader.readAsDataURL(file);
+        
+        // Reset input
+        e.target.value = '';
+      }
+
+      resetPreviewControls() {
+        if (!this.currentPreset) return;
+        
+        this.elements.previewStrength.value = this.currentPreset.defaultStrength ?? 0;
+        this.elements.previewScale.value = this.currentPreset.defaultScale ?? 32;
+        
+        this.elements.strengthValue.textContent = this.elements.previewStrength.value;
+        this.elements.scaleValue.textContent = this.elements.previewScale.value + '%';
+        
+        this.updatePreview();
+      }
+
+      filterPresets() {
+        const searchTerm = document.getElementById('searchPresets').value.toLowerCase();
+        const activeTab = this.elements.filterTabs.querySelector('.filter-tab.active');
+        const selectedCategory = activeTab ? activeTab.dataset.filter : '';
+        
+        const groups = document.querySelectorAll('.category-group');
+        let visibleCount = 0;
+        let totalCount = 0;
+        
+        groups.forEach(group => {
+          const categoryName = group.querySelector('.category-header').textContent.trim();
+          const items = group.querySelectorAll('.preset-item');
+          let visibleInGroup = 0;
+          
+          // Check if group matches category filter
+          const groupMatches = !selectedCategory || categoryName === selectedCategory;
+        
+        items.forEach(item => {
+          const name = item.querySelector('.preset-name').textContent.toLowerCase();
+          const meta = item.querySelector('.preset-meta').textContent.toLowerCase();
+          
+            const matchesSearch = !searchTerm || name.includes(searchTerm) || meta.includes(searchTerm);
+            const visible = groupMatches && matchesSearch;
+            
+            item.style.display = visible ? 'block' : 'none';
+            if (visible) {
+              visibleInGroup++;
+              visibleCount++;
+            }
+            totalCount++;
+          });
+          
+          // Hide/show entire group
+          group.style.display = (groupMatches && visibleInGroup > 0) ? 'block' : 'none';
+          
+          // Update group badge
+          const badge = group.querySelector('.category-badge');
+          if (badge) {
+            badge.textContent = visibleInGroup;
+          }
+        });
+        
+        // Update stats
+        this.elements.presetStats.textContent = `${visibleCount} of ${totalCount} presets shown`;
+      }
+
+      async loadAssets(forceRefresh = false) {
+        // Show loading state
+        this.elements.assetStatus.textContent = forceRefresh ? 'Refreshing...' : 'Loading assets...';
+        this.elements.assetStatus.className = 'status-indicator loading';
+        
+        // Add loading spinner to refresh button
+        const refreshBtn = document.getElementById('refreshPresets');
+        if (forceRefresh && refreshBtn) {
+          refreshBtn.innerHTML = '⏳';
+          refreshBtn.disabled = true;
+        }
+        
+        try {
+          // Auto-scan GitHub for all SVG files using appropriate URL
+          const assetsUrl = this.getGithubAssetsUrl(forceRefresh);
+          console.log(`📡 Fetching assets from: ${assetsUrl} (${this.isDevelopment ? 'via API' : 'direct API'})`);
+          
+          const response = await fetch(assetsUrl);
+          
+          if (response.ok) {
+            const files = await response.json();
+            
+            // Keep track of locally added assets that haven't appeared in GitHub yet
+            const pendingAssets = new Map();
+            this.locallyAddedAssets.forEach(id => {
+                if (this.assets.has(id)) {
+                    pendingAssets.set(id, this.assets.get(id));
+                }
+            });
+
+            this.assets.clear();
+            
+            // Restore pending assets first
+            pendingAssets.forEach((asset, id) => {
+                this.assets.set(id, asset);
+            });
+            
+            // Show progress for asset loading
+            let loadedCount = 0;
+            for (const file of files) {
+              // Support both SVG and PNG files
+              const isSvg = file.name.toLowerCase().endsWith('.svg');
+              const isPng = file.name.toLowerCase().endsWith('.png');
+              
+              if (file.type === 'file' && (isSvg || isPng)) {
+                const id = file.name.replace(/\.[^/.]+$/, '');
+                
+                // If this file is now in GitHub, remove it from pending list
+                if (this.locallyAddedAssets.has(id)) {
+                    this.locallyAddedAssets.delete(id);
+                }
+
+                this.assets.set(id, {
+                  id,
+                  name: file.name,
+                  type: isSvg ? 'svg' : 'png',
+                  size: file.size,
+                  url: `https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/displacement-maps/svg/${file.name}`,
+                  hash: file.sha
+                });
+                
+                loadedCount++;
+                // Update progress
+                if (forceRefresh && files.length > 5) {
+                  this.elements.assetStatus.textContent = `Loading ${loadedCount}/${files.length} assets...`;
+                }
+              }
+            }
+            
+            this.elements.assetStatus.textContent = `${this.assets.size} assets ready`;
+            this.elements.assetStatus.className = 'status-indicator success';
+            
+            console.log(`✅ Loaded ${this.assets.size} assets from ${forceRefresh ? 'GitHub (forced)' : 'GitHub'}`);
+          } else {
+            throw new Error(`GitHub API error: ${response.status}`);
+          }
+        } catch (error) {
+          console.error('Failed to load assets:', error);
+          this.elements.assetStatus.textContent = `Load failed (${error.message})`;
+          this.elements.assetStatus.className = 'status-indicator';
+          this.elements.assetStatus.style.background = 'var(--danger)';
+        } finally {
+          // Restore refresh button
+          if (refreshBtn) {
+            refreshBtn.innerHTML = '🔄';
+            refreshBtn.disabled = false;
+          }
+        }
+      }
+
+      async loadPresets(forceRefresh = false) {
+        console.log(`🔄 loadPresets called with forceRefresh=${forceRefresh}`);
+        
+        // Show loading state
+        if (!forceRefresh) {
+          this.elements.presetStats.textContent = 'Loading presets...';
+          this.elements.presetList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">⏳</div>
+              <div>Loading presets from CDN...</div>
+            </div>
+          `;
+        }
+        
+        this.elements.presetCount.textContent = 'Loading...';
+        
+        try {
+          // Use appropriate URL based on environment
+          const finalUrl = this.getPresetsUrl(forceRefresh);
+          
+          console.log(`📡 Fetching presets from: ${finalUrl} (${this.isDevelopment ? 'via proxy' : 'direct'})`);
+          console.log(`🔧 Environment: ${this.isDevelopment ? 'Development (localhost)' : 'Production'}`);
+          
+          const response = await fetch(finalUrl, { 
+            cache: forceRefresh ? 'no-cache' : 'default',
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': forceRefresh ? 'no-cache' : 'default'
+            }
+          });
+          
+          console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`📊 Raw data loaded - presets: ${data.presets?.length || 0}, categories: ${data.categories?.length || 0}`);
+            
+            // Clear existing data
+            const prevPresetCount = this.presets.size;
+            const prevCategoryCount = this.categories.size;
+            this.presets.clear();
+            this.categories.clear();
+            
+            console.log(`🗑️ Cleared ${prevPresetCount} presets and ${prevCategoryCount} categories`);
+            
+            // Load categories first
+            const categories = data.categories || this.getDefaultCategories();
+            categories.forEach(category => {
+              this.categories.set(category.id, category);
+            });
+            console.log(`📂 Loaded ${this.categories.size} categories`);
+            
+            // Show loading progress for large preset lists
+            let loadedCount = 0;
+            const totalPresets = (data.presets || []).length;
+            
+            (data.presets || []).forEach(preset => {
+              try {
+                // Process preset for new category system
+                const processedPreset = this.processPresetForNewCategorySystem(preset);
+                this.presets.set(processedPreset.id, processedPreset);
+                loadedCount++;
+                
+                // Update progress for large lists
+                if (totalPresets > 10 && !forceRefresh) {
+                  this.elements.presetStats.textContent = `Loading ${loadedCount}/${totalPresets} presets...`;
+                }
+              } catch (presetError) {
+                console.error(`❌ Failed to process preset ${preset.id}:`, presetError);
+              }
+            });
+            
+            console.log(`✅ Successfully processed ${loadedCount}/${totalPresets} presets`);
+            
+            // Render the preset list
+            this.renderPresetList();
+            this.elements.presetCount.textContent = `${this.presets.size} presets loaded`;
+            
+            // Success feedback
+            setTimeout(() => {
+            this.elements.presetCount.textContent = `${this.presets.size} presets`;
+            }, 2000);
+            
+            console.log(`✅ Load complete: ${this.presets.size} presets, ${this.categories.size} categories`);
+            
+            // Log preset IDs for debugging
+            if (forceRefresh) {
+              console.log('📋 Loaded preset IDs:', Array.from(this.presets.keys()));
+            }
+            
+          } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        } catch (error) {
+          console.error('Failed to load presets:', error);
+          
+          // Show error state
+          this.elements.presetList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">❌</div>
+              <div>Failed to load presets</div>
+              <div style="font-size: 12px; margin-top: 8px; color: var(--danger);">${error.message}</div>
+              <button class="btn" onclick="studio.loadPresets(true)" style="margin-top: 12px;">🔄 Retry</button>
+            </div>
+          `;
+          
+          this.elements.presetStats.textContent = 'Load failed - check connection';
+          this.elements.presetCount.textContent = 'Load failed';
+        }
+      }
+
+      async forceRefreshPresets() {
+        console.log('🔄 Force refresh initiated...');
+        
+        this.elements.assetStatus.textContent = 'Refreshing...';
+        this.elements.assetStatus.className = 'status-indicator loading';
+        
+        try {
+          console.log('🔄 Force refreshing presets...');
+          const presetsBeforeRefresh = this.presets.size;
+          
+          await this.loadPresets(true); // Force refresh
+          
+          const presetsAfterRefresh = this.presets.size;
+          console.log(`📊 Refresh results: ${presetsBeforeRefresh} → ${presetsAfterRefresh} presets`);
+          
+          console.log('🔄 Refreshing assets...');
+          await this.loadAssets(true); // Refresh assets too
+          
+          this.elements.assetStatus.textContent = `${this.assets.size} assets ready`;
+          this.elements.assetStatus.className = 'status-indicator success';
+          
+          console.log('✅ Force refresh completed successfully');
+          
+          // Show success feedback
+          const refreshBtn = document.getElementById('refreshPresets');
+          if (refreshBtn) {
+            const originalText = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = '✅';
+            setTimeout(() => {
+              refreshBtn.innerHTML = originalText;
+            }, 2000);
+          }
+          
+        } catch (error) {
+          console.error('❌ Force refresh failed:', error);
+          this.elements.assetStatus.textContent = 'Refresh failed';
+          this.elements.assetStatus.className = 'status-indicator';
+          this.elements.assetStatus.style.background = 'var(--danger)';
+          
+          // Show error feedback
+          alert(`Force refresh failed: ${error.message}\n\nCheck console for details.`);
+        }
+      }
+
+      renderPresetList() {
+        const categories = new Map();
+        
+        // Group by category
+        this.presets.forEach(preset => {
+          const cat = preset.category || 'Uncategorized';
+          if (!categories.has(cat)) categories.set(cat, []);
+          categories.get(cat).push(preset);
+        });
+
+        // Render
+        this.elements.presetList.innerHTML = '';
+        
+        if (categories.size === 0) {
+          this.elements.presetList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <div>No presets found</div>
+            </div>
+          `;
+          return;
+        }
+
+        categories.forEach((presets, category) => {
+          const group = document.createElement('div');
+          group.className = 'category-group';
+          
+          const header = document.createElement('div');
+          header.className = 'category-header';
+          header.innerHTML = `
+            <span>${category}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="category-badge">${presets.length}</span>
+              <span class="category-toggle">▼</span>
+            </div>
+          `;
+          
+          // Add collapse/expand functionality
+          header.addEventListener('click', () => {
+            group.classList.toggle('collapsed');
+          });
+          
+          group.appendChild(header);
+
+          presets.forEach(preset => {
+            const item = document.createElement('div');
+            item.className = 'preset-item';
+            item.innerHTML = `
+              <div class="preset-name">${preset.name} ${preset.premium ? '👑' : ''}</div>
+              <div class="preset-meta">${preset.layers?.length || 0} layers • Scale: ${preset.defaultScale}% • Strength: ${preset.defaultStrength}</div>
+              
+              <div class="preset-actions">
+                <div class="action-menu">
+                  <button class="action-btn" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('show')">⋯</button>
+                  <div class="action-dropdown">
+                    <div class="action-item" onclick="event.stopPropagation(); studio.duplicatePreset('${preset.id}')">
+                      📋 Duplicate
+                    </div>
+                    <div class="action-item" onclick="event.stopPropagation(); studio.renamePreset('${preset.id}')">
+                      ✏️ Rename
+                    </div>
+                    <div class="action-item" onclick="event.stopPropagation(); studio.exportPreset('${preset.id}')">
+                      📤 Export
+                    </div>
+                    <div class="action-item danger" onclick="event.stopPropagation(); studio.deletePreset('${preset.id}')">
+                      🗑️ Delete
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+            
+            item.addEventListener('click', (e) => {
+              if (!e.target.closest('.preset-actions')) {
+                this.selectPreset(preset.id, e.target);
+              }
+            });
+            group.appendChild(item);
+          });
+
+          this.elements.presetList.appendChild(group);
+        });
+        
+        // Apply current filters
+        setTimeout(() => this.filterPresets(), 100);
+      }
+
+      selectPreset(presetId, targetElement = null) {
+        // Remove active state from all items
+        document.querySelectorAll('.preset-item').forEach(item => {
+          item.classList.remove('active');
+        });
+        
+        // Add active state to selected item
+        if (targetElement) {
+          const presetItem = targetElement.closest('.preset-item');
+          if (presetItem) {
+            presetItem.classList.add('active');
+          }
+        } else {
+          // Find the preset item by ID if no target element provided
+          document.querySelectorAll('.preset-item').forEach(item => {
+            const nameElement = item.querySelector('.preset-name');
+            if (nameElement) {
+              const preset = this.presets.get(presetId);
+              if (preset && nameElement.textContent.includes(preset.name)) {
+                item.classList.add('active');
+              }
+            }
+          });
+        }
+        
+        const preset = this.presets.get(presetId);
+        if (!preset) return;
+
+        this.currentPreset = preset;
+        this.loadPresetIntoEditor(preset);
+        this.showEditor();
+      }
+
+      loadPresetIntoEditor(preset) {
+        this.elements.editorTitle.textContent = preset.name;
+        this.elements.presetId.value = preset.id;
+        this.elements.presetName.value = preset.name;
+        this.elements.premiumPreset.checked = preset.premium || false;
+        this.elements.defaultScale.value = preset.defaultScale || 32;
+        this.elements.textureScale.value = preset.textureScale || 1;
+        this.elements.defaultStrength.value = preset.defaultStrength || 0;
+        
+        // Update preview controls
+        this.elements.previewScale.value = preset.defaultScale || 32;
+        this.elements.previewStrength.value = preset.defaultStrength || 0;
+        this.elements.scaleValue.textContent = (preset.defaultScale || 32) + '%';
+        this.elements.strengthValue.textContent = preset.defaultStrength || 0;
+
+        // Update category selector
+        this.updateSelectedCategoriesDisplay();
+
+        this.renderLayers(preset.layers || []);
+        this.updatePreview();
+      }
+
+      renderLayers(layers) {
+        this.elements.layersList.innerHTML = '';
+        
+        if (layers.length === 0) {
+          this.elements.layersList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📐</div>
+              <div>No layers yet</div>
+              <div style="font-size: 12px;">Add a layer to start building your effect</div>
+            </div>
+          `;
+          return;
+        }
+
+        layers.forEach((layer, index) => {
+          this.createLayerCard(layer, index);
+        });
+      }
+
+      createLayerCard(layer, index) {
+        const card = document.createElement('div');
+        card.className = 'layer-card';
+        card.innerHTML = `
+          <div class="layer-header">
+            <div class="layer-title">Layer ${index + 1}</div>
+            <button class="btn" onclick="studio.removeLayer(${index})">Remove</button>
+          </div>
+          
+          <div style="margin-bottom: 12px;">
+            <div class="form-label">Displacement Map</div>
+            <button class="btn" onclick="studio.selectAssetForLayer(${index})" style="width: 100%; justify-content: center;">
+              ${layer.src ? this.getAssetName(layer.src) : 'Choose Asset...'}
+            </button>
+          </div>
+
+          <div class="layer-controls">
+            <div class="form-group">
+              <label class="form-label">Tiling</label>
+              <select class="form-select" data-layer-prop="tiling" onchange="studio.updateLayer(${index}, 'tiling', this.value)">
+                <option value="tiled" ${layer.tiling === 'tiled' ? 'selected' : ''}>Tiled</option>
+                <option value="stretched" ${layer.tiling === 'stretched' ? 'selected' : ''}>Stretched</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Scale Mode</label>
+              <select class="form-select" data-layer-prop="scaleMode" onchange="studio.updateLayer(${index}, 'scaleMode', this.value)">
+                <option value="uniform" ${layer.scaleMode === 'uniform' ? 'selected' : ''}>Uniform</option>
+                <option value="xOnly" ${layer.scaleMode === 'xOnly' ? 'selected' : ''}>X Only</option>
+                <option value="yOnly" ${layer.scaleMode === 'yOnly' ? 'selected' : ''}>Y Only</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Blend Mode</label>
+              <select class="form-select" data-layer-prop="blendMode" onchange="studio.updateLayer(${index}, 'blendMode', this.value)">
+                <option value="" ${!layer.blendMode ? 'selected' : ''}>Normal</option>
+                <option value="overlay" ${layer.blendMode === 'overlay' ? 'selected' : ''}>Overlay</option>
+                <option value="multiply" ${layer.blendMode === 'multiply' ? 'selected' : ''}>Multiply</option>
+                <option value="screen" ${layer.blendMode === 'screen' ? 'selected' : ''}>Screen</option>
+                <option value="color-burn" ${layer.blendMode === 'color-burn' ? 'selected' : ''}>Color Burn</option>
+                <option value="hard-light" ${layer.blendMode === 'hard-light' ? 'selected' : ''}>Hard Light</option>
+                <option value="soft-light" ${layer.blendMode === 'soft-light' ? 'selected' : ''}>Soft Light</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Advanced Layer Controls (as in engine) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <div class="form-group">
+              <label class="form-label">Opacity</label>
+              <input type="range" class="form-input" min="0" max="100" value="${(layer.opacity || 1) * 100}" 
+                     onchange="studio.updateLayer(${index}, 'opacity', this.value / 100)" 
+                     style="height: 6px; padding: 0;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Align X</label>
+              <select class="form-select" onchange="studio.updateLayer(${index}, 'alignX', this.value)">
+                <option value="left" ${layer.alignX === 'left' ? 'selected' : ''}>Left</option>
+                <option value="center" ${layer.alignX === 'center' ? 'selected' : ''}>Center</option>
+                <option value="right" ${layer.alignX === 'right' ? 'selected' : ''}>Right</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Align Y</label>
+              <select class="form-select" onchange="studio.updateLayer(${index}, 'alignY', this.value)">
+                <option value="top" ${layer.alignY === 'top' ? 'selected' : ''}>Top</option>
+                <option value="center" ${layer.alignY === 'center' ? 'selected' : ''}>Center</option>
+                <option value="bottom" ${layer.alignY === 'bottom' ? 'selected' : ''}>Bottom</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Offset Controls -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <div class="form-group">
+              <label class="form-label">Offset X (px)</label>
+              <input type="number" class="form-input" value="${layer.offsetX || 0}" 
+                     onchange="studio.updateLayer(${index}, 'offsetX', parseInt(this.value))" 
+                     style="font-size: 12px; padding: 4px 6px;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Offset Y (px)</label>
+              <input type="number" class="form-input" value="${layer.offsetY || 0}" 
+                     onchange="studio.updateLayer(${index}, 'offsetY', parseInt(this.value))" 
+                     style="font-size: 12px; padding: 4px 6px;">
+            </div>
+          </div>
+        `;
+
+        this.elements.layersList.appendChild(card);
+      }
+
+      getAssetName(src) {
+        if (src.startsWith('resource://')) {
+          const id = src.replace('resource://', '');
+          const asset = this.assets.get(id);
+          return asset ? asset.name : id;
+        }
+        return src.split('/').pop() || 'Unknown';
+      }
+
+      showEditor() {
+        this.elements.emptyState.style.display = 'none';
+        this.elements.presetEditor.classList.add('active');
+      }
+
+      createNewPreset() {
+        const id = this.generateUniqueId('new-preset');
+        const newPreset = {
+          id,
+          name: 'New Preset',
+          categories: ['custom'],
+          category: 'Custom', // Legacy compatibility
+          defaultScale: 100,
+          textureScale: 1,
+          defaultStrength: 150,
+          chromaticAberration: 0,
+          blur: 0,
+          soft: 0,
+          dissolveStrength: 0,
+          grain: 0,
+          grainSize: 50,
+          reflectOpacity: 0,
+          reflectSharpness: 0,
+          layers: []
+        };
+
+        console.log(`🆕 Creating new preset with ID: ${id}`);
+
+        this.presets.set(id, newPreset);
+        this.currentPreset = newPreset;
+        this.renderPresetList();
+        this.loadPresetIntoEditor(newPreset);
+        this.showEditor();
+        this.markAsUnsaved();
+      }
+
+      addLayer() {
+        if (!this.currentPreset) return;
+        
+        if (!this.currentPreset.layers) this.currentPreset.layers = [];
+        
+        this.currentPreset.layers.push({
+          src: '',
+          tiling: 'tiled',
+          scaleMode: 'uniform'
+        });
+
+        this.renderLayers(this.currentPreset.layers);
+        this.markAsUnsaved();
+      }
+
+      removeLayer(index) {
+        if (!this.currentPreset || !this.currentPreset.layers) return;
+        
+        this.currentPreset.layers.splice(index, 1);
+        this.renderLayers(this.currentPreset.layers);
+        this.updatePreview();
+        this.markAsUnsaved();
+      }
+
+      selectAssetForLayer(layerIndex) {
+        this.currentLayerIndex = layerIndex;
+        this.showAssetModal();
+      }
+
+      showAssetModal() {
+        this.elements.assetModal.style.display = 'block';
+        
+        // Show loading state first
+        this.elements.assetGrid.innerHTML = `
+          <div style="grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: var(--text-muted);">
+            <div style="font-size: 32px; margin-bottom: 16px;">⏳</div>
+            <div>Loading displacement maps...</div>
+          </div>
+        `;
+        this.elements.assetModalStats.textContent = 'Loading...';
+        
+        // Render grid after a brief delay to show loading state
+        setTimeout(() => {
+          this.renderAssetGrid();
+        }, 100);
+      }
+
+      closeAssetModal() {
+        this.elements.assetModal.style.display = 'none';
+      }
+
+      async handleAssetUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (file.size > 1024 * 1024) {
+            alert('File size too large. Please use files under 1MB.');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const content = reader.result;
+            const name = prompt('Enter asset name (e.g. my-pattern.svg):', file.name);
+            if (!name) return;
+            
+            this.elements.assetStatus.textContent = 'Uploading...';
+            this.elements.assetStatus.className = 'status-indicator loading';
+            
+            try {
+                const response = await fetch('/api/upload-asset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, content })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    // Add asset to local cache immediately so it shows up right away
+                    const assetId = name.replace(/\.[^/.]+$/, '');
+                    const assetUrl = `https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/displacement-maps/svg/${name}`;
+                    
+                    // Mark as locally added to prevent overwritten by old GitHub data
+                    this.locallyAddedAssets.add(assetId);
+
+                    this.assets.set(assetId, {
+                        id: assetId,
+                        name: name,
+                        type: name.endsWith('.svg') ? 'svg' : 'png',
+                        size: file.size,
+                        url: assetUrl
+                    });
+                    
+                    // Re-render asset grid if modal is open
+                    if (this.elements.assetModal.style.display === 'block') {
+                        this.renderAssetGrid();
+                        // Show success message in modal stats
+                        this.elements.assetModalStats.textContent = `${this.assets.size} assets available (${name} added)`;
+                        setTimeout(() => {
+                            this.elements.assetModalStats.textContent = `${this.assets.size} assets available`;
+                        }, 3000);
+                    }
+                    
+                    // Update status
+                    this.elements.assetStatus.textContent = `${this.assets.size} assets ready`;
+                    this.elements.assetStatus.className = 'status-indicator success';
+                    
+                    // Also refresh from GitHub in background after a delay (for eventual consistency)
+                    // Use a longer delay to allow git push to complete
+                    setTimeout(() => {
+                        // Only refresh if modal is closed or user hasn't interacted
+                        if (this.elements.assetModal.style.display !== 'block') {
+                            this.loadAssets(true);
+                        }
+                    }, 5000);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                alert('Upload failed: ' + error.message);
+                this.elements.assetStatus.textContent = 'Upload failed';
+                this.elements.assetStatus.className = 'status-indicator';
+                this.elements.assetStatus.style.background = 'var(--danger)';
+            }
+        };
+        reader.readAsDataURL(file);
+        // Reset input
+        e.target.value = '';
+      }
+
+      async deleteAsset(filename) {
+        if (!confirm(`Are you sure you want to delete ${filename}? This cannot be undone.`)) return;
+        
+        this.elements.assetStatus.textContent = 'Deleting...';
+        this.elements.assetStatus.className = 'status-indicator loading';
+        
+        try {
+            const response = await fetch('/api/delete-asset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                // Remove asset from local cache immediately
+                const assetId = filename.replace(/\.[^/.]+$/, '');
+                this.assets.delete(assetId);
+                
+                // Re-render asset grid if modal is open
+                if (this.elements.assetModal.style.display === 'block') {
+                    this.renderAssetGrid();
+                    // Show success message in modal stats
+                    this.elements.assetModalStats.textContent = `${this.assets.size} assets available (${filename} deleted)`;
+                    setTimeout(() => {
+                        this.elements.assetModalStats.textContent = `${this.assets.size} assets available`;
+                    }, 3000);
+                }
+                
+                // Update status
+                this.elements.assetStatus.textContent = `${this.assets.size} assets ready`;
+                this.elements.assetStatus.className = 'status-indicator success';
+                
+                // Also refresh from GitHub in background after a delay (for eventual consistency)
+                setTimeout(() => {
+                    // Only refresh if modal is closed or user hasn't interacted
+                    if (this.elements.assetModal.style.display !== 'block') {
+                        this.loadAssets(true);
+                    }
+                }, 5000);
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            alert('Delete failed: ' + error.message);
+            this.elements.assetStatus.textContent = 'Delete failed';
+             this.elements.assetStatus.className = 'status-indicator';
+             this.elements.assetStatus.style.background = 'var(--danger)';
+        }
+      }
+
+      renderAssetGrid() {
+        this.elements.assetGrid.innerHTML = '';
+        
+        // Check if assets are loaded
+        if (this.assets.size === 0) {
+          this.elements.assetGrid.innerHTML = `
+            <div style="grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; color: var(--text-muted);">
+              <div style="font-size: 32px; margin-bottom: 16px;">📁</div>
+              <div>No assets loaded</div>
+              <div style="font-size: 12px; margin-top: 8px;">Assets are still loading or failed to load</div>
+              <button class="btn" onclick="studio.loadAssets(true)" style="margin-top: 12px;">🔄 Reload Assets</button>
+            </div>
+          `;
+          this.elements.assetModalStats.textContent = 'No assets available';
+          return;
+        }
+        
+        this.elements.assetModalStats.textContent = `${this.assets.size} assets available`;
+
+        this.assets.forEach(asset => {
+          const item = document.createElement('div');
+          item.className = 'asset-item';
+          item.dataset.name = asset.name.toLowerCase();
+          item.dataset.type = asset.type;
+          item.dataset.category = this.getAssetCategory(asset.name);
+          
+          item.innerHTML = `
+            <img src="${asset.url}" alt="${asset.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+            <div class="asset-badge">${asset.type.toUpperCase()}</div>
+            <button class="delete-asset-btn" onclick="event.stopPropagation(); studio.deleteAsset('${asset.name}')" title="Delete asset">🗑️</button>
+            <div style="position: absolute; bottom: 2px; left: 2px; right: 2px; background: rgba(0,0,0,0.8); color: white; font-size: 8px; padding: 2px; border-radius: 2px; text-align: center; overflow: hidden; white-space: nowrap;">${asset.name.replace(/\.[^/.]+$/, '')}</div>
+          `;
+          
+          item.addEventListener('click', () => this.selectAsset(asset.id));
+          this.elements.assetGrid.appendChild(item);
+        });
+        
+        // Apply current filters
+        this.filterAssets();
+      }
+      
+      getAssetCategory(filename) {
+        const name = filename.toLowerCase();
+        if (name.includes('horizontal') || name.includes('vertical') || name.includes('linear')) return 'linear';
+        if (name.includes('radial') || name.includes('circle') || name.includes('ripple')) return 'radial';
+        if (name.includes('diamond') || name.includes('geometric') || name.includes('pattern')) return 'geometric';
+        if (name.includes('organic') || name.includes('curve') || name.includes('bezie')) return 'organic';
+        return 'other';
+      }
+      
+      filterAssets() {
+        const searchTerm = document.getElementById('assetSearch').value.toLowerCase();
+        const typeFilter = this.elements.assetTypeFilter.value;
+        const categoryFilter = this.elements.assetCategoryFilter.value;
+        
+        const items = this.elements.assetGrid.querySelectorAll('.asset-item');
+        let visibleCount = 0;
+        
+        items.forEach(item => {
+          const name = item.dataset.name;
+          const type = item.dataset.type;
+          const category = item.dataset.category;
+          
+          const matchesSearch = !searchTerm || name.includes(searchTerm);
+          const matchesType = !typeFilter || type === typeFilter;
+          const matchesCategory = !categoryFilter || category === categoryFilter;
+          
+          const visible = matchesSearch && matchesType && matchesCategory;
+          item.style.display = visible ? 'block' : 'none';
+          
+          if (visible) visibleCount++;
+        });
+        
+        this.elements.assetModalStats.textContent = `${visibleCount} of ${this.assets.size} assets shown`;
+      }
+
+      selectAsset(assetId) {
+        if (!this.currentPreset || !this.currentPreset.layers || this.currentLayerIndex === undefined) return;
+        
+        this.currentPreset.layers[this.currentLayerIndex].src = `resource://${assetId}`;
+        this.renderLayers(this.currentPreset.layers);
+        this.updatePreview();
+        this.closeAssetModal();
+      }
+
+      updateLayer(index, prop, value) {
+        if (!this.currentPreset || !this.currentPreset.layers) return;
+        
+        this.currentPreset.layers[index][prop] = value;
+        this.updatePreview();
+        this.markAsUnsaved();
+      }
+
+      updateCurrentPreset() {
+        if (!this.currentPreset) return;
+
+        // Sanitize ID input automatically
+        const rawId = this.elements.presetId.value;
+        const sanitizedId = this.sanitizePresetId(rawId);
+        
+        // Update the input field if it was sanitized
+        if (rawId !== sanitizedId) {
+          this.elements.presetId.value = sanitizedId;
+          console.log(`🔧 Auto-sanitized ID: "${rawId}" → "${sanitizedId}"`);
+        }
+
+        this.currentPreset.id = sanitizedId;
+        this.currentPreset.name = this.elements.presetName.value;
+        this.currentPreset.defaultScale = parseInt(this.elements.defaultScale.value);
+        this.currentPreset.textureScale = parseFloat(this.elements.textureScale.value);
+        this.currentPreset.defaultStrength = parseInt(this.elements.defaultStrength.value);
+        
+        this.currentPreset.premium = this.elements.premiumPreset.checked;
+
+        // Update legacy category field for compatibility
+        if (this.currentPreset.categories && this.currentPreset.categories.length > 0) {
+          const primaryCategory = this.categories.get(this.currentPreset.categories[0]);
+          this.currentPreset.category = primaryCategory ? primaryCategory.name : this.currentPreset.categories[0];
+        }
+
+        this.elements.editorTitle.textContent = this.currentPreset.name;
+        this.renderPresetList();
+        
+        // Update preview with new values (important for soft/blur/etc)
+        this.updatePreview();
+        
+        // Mark as unsaved and schedule auto-save
+        this.markAsUnsaved();
+      }
+      
+      markAsUnsaved() {
+        this.hasUnsavedChanges = true;
+        this.updateSaveButtonState();
+        
+        // Schedule auto-save
+        if (this.autoSaveTimeout) {
+          clearTimeout(this.autoSaveTimeout);
+        }
+        
+        this.autoSaveTimeout = setTimeout(() => {
+          if (this.hasUnsavedChanges && this.currentPreset && !this.isSaving) {
+            console.log('🔄 Auto-saving changes...');
+            // Use saveAllPresets instead of savePreset to avoid UI conflicts
+            this.saveAllPresets().then((success) => {
+              if (success) {
+                this.markAsSaved();
+                console.log('✅ Auto-save completed');
+              } else {
+                console.warn('⚠️ Auto-save failed');
+              }
+            }).catch(error => {
+              console.error('❌ Auto-save error:', error);
+            });
+          } else if (this.isSaving) {
+            console.log('⏳ Skipping auto-save - manual save in progress');
+          }
+        }, 5000); // Auto-save after 5 seconds of inactivity
+      }
+      
+      markAsSaved() {
+        this.hasUnsavedChanges = false;
+        this.updateSaveButtonState();
+        
+        if (this.autoSaveTimeout) {
+          clearTimeout(this.autoSaveTimeout);
+          this.autoSaveTimeout = null;
+        }
+      }
+      
+      updateSaveButtonState() {
+        const saveBtn = document.getElementById('savePreset');
+        if (this.hasUnsavedChanges) {
+          saveBtn.textContent = '💾 Save Changes*';
+          saveBtn.style.background = 'var(--warn)';
+          saveBtn.style.borderColor = 'var(--warn)';
+        } else {
+          saveBtn.textContent = '💾 Save & Deploy';
+          saveBtn.style.background = 'var(--accent)';
+          saveBtn.style.borderColor = 'var(--accent)';
+        }
+      }
+
+      async updatePreview() {
+        console.log('🎨 Updating preview (CANVAS GENERATION like plugin)...');
+        
+        // Basic settings only
+        const strength = parseInt(this.elements.previewStrength.value) || 0;
+        const scale = parseInt(this.elements.previewScale.value) || 32;
+        const textureScale = parseFloat(this.elements.textureScale.value) || 1;
+        
+        // Extra settings from current preset (live inputs)
+        const chromatic = 0;
+        const blur = 0;
+        const soft = 0;
+        const dissolve = 0;
+        const grain = 0;
+        const grainSize = 0;
+
+        console.log(`Settings: strength=${strength}, scale=${scale}`);
+
+        if (!this.currentPreset || !this.currentPreset.layers || this.currentPreset.layers.length === 0) {
+          console.log('No preset or layers, clearing displacement map');
+          if (this.elements.feImg) {
+            this.elements.feImg.setAttribute('href', '');
+          }
+          this.resetDisplacementScales();
+          return;
+        }
+
+        // KEY DIFFERENCE: Generate displacement texture via Canvas (as in plugin)
+        try {
+          await this.generateDisplacementTexture(scale, textureScale);
+        } catch (error) {
+          console.error('Failed to generate displacement texture:', error);
+          return;
+        }
+
+        const previewWidth = 400;
+        const previewHeight = 300;
+        const previewMax = Math.max(previewWidth, previewHeight);
+
+        // Apply soft blur to displacement map
+        if (this.elements.feMapGaussianBlur) {
+            this.elements.feMapGaussianBlur.setAttribute('stdDeviation', '0');
+        }
+
+        // Apply source blur
+        if (this.elements.feSourceGaussianBlur) {
+             this.elements.feSourceGaussianBlur.setAttribute('stdDeviation', '0');
+        }
+
+        // Apply dissolve
+        if (this.elements.feDispMapDissolve) {
+            this.elements.feDispMapDissolve.setAttribute('scale', '0');
+        }
+
+        // Apply grain
+        if (this.elements.feGrainAlpha) {
+            this.elements.feGrainAlpha.setAttribute('slope', '0');
+        }
+        // Calculate displacement scales
+        // baseStrength = max(w,h) / 10
+        const baseStrength = previewMax / 10;
+        // s = strength * (baseStrength / 100)
+        const s = strength * (baseStrength / 100);
+
+        if (this.elements.feDispMapR) {
+          this.elements.feDispMapR.setAttribute('scale', String(s));
+        }
+        if (this.elements.feDispMapG) {
+          this.elements.feDispMapG.setAttribute('scale', String(s));
+        }
+        if (this.elements.feDispMapB) {
+          this.elements.feDispMapB.setAttribute('scale', String(s));
+        }
+
+        console.log(`✅ Applied displacement: ${s}`);
+      }
+
+      async generateDisplacementTexture(scalePct, textureScale = 1) {
+        console.log('🗺️ Generating Canvas displacement texture (EXACT engine pipeline)...');
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 300;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, 400, 300);
+        
+        // Load and render layers (exactly like FilterRenderer)
+        const layers = this.currentPreset.layers || [];
+        
+        for (const layer of layers) {
+          if (!layer.src || !layer.src.startsWith('resource://')) continue;
+          
+          const assetId = layer.src.replace('resource://', '');
+          const asset = this.assets.get(assetId);
+          if (!asset) continue;
+          
+          try {
+            // Load real image from CDN (as in engine)
+            const img = await this.loadImageForCanvas(asset.url);
+            
+            // Render layer with FULL parameters (like FilterRenderer.drawLayer)
+            await this.drawLayerWithFullParams(ctx, 400, 300, img, layer, scalePct, textureScale);
+            
+            console.log(`✅ Drew layer: ${asset.name} (real CDN asset)`);
+          } catch (error) {
+            console.warn(`Failed to load layer ${asset.name}:`, error);
+            // Fallback to generated texture
+            const fallbackTexture = this.createFallbackTexture(assetId);
+            await this.drawLayerWithFullParams(ctx, 400, 300, fallbackTexture, layer, scalePct, textureScale);
+          }
+        }
+        
+        // If no layers, create neutral texture
+        if (layers.length === 0) {
+          ctx.fillStyle = '#808080';
+          ctx.fillRect(0, 0, 400, 300);
+        }
+        
+        // Apply to SVG filter
+        const dataUrl = canvas.toDataURL('image/png');
+        if (this.elements.feImg) {
+          this.elements.feImg.setAttribute('href', dataUrl);
+          console.log('✅ Updated feImg with Canvas-generated displacement texture');
+        }
+      }
+
+      async loadImageForCanvas(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error('Failed to load ' + url));
+          img.src = url;
+        });
+      }
+
+      async drawLayerWithFullParams(ctx, canvasW, canvasH, image, layer, globalScalePct, textureScale = 1) {
+        // Exact copy of FilterRenderer.drawLayer logic
+        ctx.save();
+        
+        // Apply opacity and blend mode
+        const opacity = typeof layer.opacity === 'number' ? layer.opacity : 1;
+        const blendMode = layer.blendMode || 'source-over';
+        
+        ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
+        ctx.globalCompositeOperation = blendMode;
+        
+        if (layer.tiling === 'tiled') {
+          // Use layer scale or global scale * textureScale
+          const layerScale = typeof layer.scale === 'number' ? layer.scale : (globalScalePct * textureScale);
+          const scale = layerScale * 0.01;
+          
+          await this.drawTiledWithAlignment(ctx, canvasW, canvasH, image, scale, layer);
+        } else {
+          // Stretched mode taking offset into account
+          const offsetX = layer.offsetX || 0;
+          const offsetY = layer.offsetY || 0;
+          
+          if (offsetX !== 0 || offsetY !== 0) {
+            ctx.translate(offsetX, offsetY);
+          }
+          ctx.drawImage(image, 0, 0, canvasW, canvasH);
+        }
+        
+        ctx.restore();
+      }
+
+      async drawTiledWithAlignment(ctx, canvasW, canvasH, image, scale, layer) {
+        // Exact copy of FilterRenderer.drawTiledMap with alignment
+        let w = Math.max(1, image.width * scale);
+        let h = Math.max(1, image.height * scale);
+        
+        const scaleMode = layer.scaleMode || 'uniform';
+        if (scaleMode === 'xOnly') h = canvasH;
+        else if (scaleMode === 'yOnly') w = canvasW;
+        
+        // Alignment calculation (as in engine)
+        let originX = 0, originY = 0;
+        const alignX = layer.alignX || 'left';
+        const alignY = layer.alignY || 'top';
+        
+        if (alignX === 'center') originX = Math.floor((canvasW - w) / 2);
+        else if (alignX === 'right') originX = canvasW - w;
+        if (alignY === 'center') originY = Math.floor((canvasH - h) / 2);
+        else if (alignY === 'bottom') originY = canvasH - h;
+        
+        // Add offset
+        originX += (layer.offsetX || 0);
+        originY += (layer.offsetY || 0);
+        
+        // Tiling (exact copy from FilterRenderer)
+        const startI = Math.floor((0 - originX) / w) - 1;
+        const startJ = Math.floor((0 - originY) / h) - 1;
+        const endI = Math.ceil((canvasW - originX) / w) + 1;
+        const endJ = Math.ceil((canvasH - originY) / h) + 1;
+        
+        for (let i = startI; i <= endI; i++) {
+          for (let j = startJ; j <= endJ; j++) {
+            const x = originX + i * w;
+            const y = originY + j * h;
+            if (x > canvasW || y > canvasH || x + w < 0 || y + h < 0) continue;
+            ctx.drawImage(image, x, y, w, h);
+          }
+        }
+      }
+
+      createFallbackTexture(assetId) {
+        // Fallback textures if CDN unavailable
+        if (assetId.includes('horizontal')) {
+          return this.createHorizontalGradient();
+        } else if (assetId.includes('vertical')) {
+          return this.createVerticalGradient();
+        } else {
+          return this.createRadialGradient();
+        }
+      }
+
+      createHorizontalGradient() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        
+        const gradient = ctx.createLinearGradient(0, 0, 100, 0);
+        gradient.addColorStop(0, '#000000');    // Black = left displacement
+        gradient.addColorStop(0.5, '#808080');  // Gray = no displacement  
+        gradient.addColorStop(1, '#ffffff');    // White = right displacement
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 100, 50);
+        
+        return canvas;
+      }
+
+      createVerticalGradient() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 50;
+        canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, 100);
+        gradient.addColorStop(0, '#000000');    // Black = up displacement
+        gradient.addColorStop(0.5, '#808080');  // Gray = no displacement
+        gradient.addColorStop(1, '#ffffff');    // White = down displacement
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 50, 100);
+        
+        return canvas;
+      }
+
+      createRadialGradient() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 200;
+        const ctx = canvas.getContext('2d');
+        
+        const gradient = ctx.createRadialGradient(100, 100, 0, 100, 100, 100);
+        gradient.addColorStop(0, '#ffffff');    // White = outward displacement
+        gradient.addColorStop(0.5, '#808080');  // Gray = no displacement
+        gradient.addColorStop(1, '#000000');    // Black = inward displacement
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 200, 200);
+        
+        return canvas;
+      }
+
+
+      resetDisplacementScales() {
+        // Reset all displacement scales to 0
+        if (this.elements.feDispMapR) this.elements.feDispMapR.setAttribute('scale', '0');
+        if (this.elements.feDispMapG) this.elements.feDispMapG.setAttribute('scale', '0');
+        if (this.elements.feDispMapB) this.elements.feDispMapB.setAttribute('scale', '0');
+      }
+
+
+
+
+
+      async savePreset() {
+        if (!this.currentPreset) return;
+
+        // Disable save button and show progress
+        const saveBtn = document.getElementById('savePreset');
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = '💾 Saving...';
+        saveBtn.classList.add('saving');
+        saveBtn.disabled = true;
+        
+        // Show progress modal
+        this.showSaveProgress();
+
+        try {
+          // Step 1: Validate preset data
+          this.updateSaveProgress(1, 'Validating preset data...');
+          await this.sleep(500);
+          
+          const validation = this.validateCurrentPreset();
+          if (!validation.valid) {
+            throw new Error(validation.error);
+          }
+
+        // Update preset in memory
+        this.presets.set(this.currentPreset.id, { ...this.currentPreset });
+
+          // Step 2: Generate manifest using saveAllPresets
+          this.updateSaveProgress(2, 'Uploading to server...');
+          await this.sleep(300);
+          
+          // Step 3: Save to server using the proper saveAllPresets function
+          this.updateSaveProgress(3, 'Deploying to CDN...');
+          
+          const saveSuccess = await this.saveAllPresets();
+          
+          if (saveSuccess) {
+            // Server save succeeded
+            
+            // Step 4: Smart refresh with CDN awareness
+            this.updateSaveProgress(4, 'Verifying deployment...');
+            
+            console.log('🔄 Verifying save with GitHub CDN...');
+            console.log(`📊 Current presets in memory: ${this.presets.size}`);
+            
+            // Store current preset info before refresh
+            const currentPresetId = this.currentPreset?.id;
+            const currentPresetName = this.currentPreset?.name;
+            const presetsBeforeReload = this.presets.size;
+            
+            // Check GitHub propagation status
+            console.log('🔍 Checking GitHub CDN propagation...');
+            const propagationCheck = await this.checkGithubPropagation(presetsBeforeReload);
+            
+            if (propagationCheck.success) {
+              console.log('✅ GitHub CDN updated, safe to reload');
+              await this.loadPresets(true);
+              
+              // Re-select current preset to maintain state
+              if (currentPresetId && this.presets.has(currentPresetId)) {
+                setTimeout(() => {
+                  const presetItems = document.querySelectorAll('.preset-item');
+                  presetItems.forEach(item => {
+                    const nameElement = item.querySelector('.preset-name');
+                    if (nameElement && nameElement.textContent.includes(currentPresetName)) {
+                      item.classList.add('active');
+                      console.log(`✅ Re-selected preset: ${currentPresetName}`);
+                    }
+                  });
+                }, 300);
+              }
+              
+              this.showSaveSuccess('Preset saved and deployed successfully!');
+            } else {
+              // CDN propagation delayed - keep Studio state, show info message
+              console.log('⏳ GitHub CDN propagation delayed, keeping Studio state');
+              this.showSaveSuccess(`Preset saved! GitHub CDN updating... (may take 1-2 minutes to appear in plugin)`);
+              
+              // Schedule a background check in 30 seconds
+              setTimeout(async () => {
+                console.log('🔄 Background propagation check...');
+                const laterCheck = await this.checkGithubPropagation(presetsBeforeReload, 1);
+                if (laterCheck.success) {
+                  console.log('✅ GitHub CDN finally propagated');
+                  // Optionally update UI status
+                  this.elements.assetStatus.textContent = `${this.assets.size} assets`;
+                  this.elements.assetStatus.className = 'status-indicator success';
+                  this.elements.assetStatus.title = '';
+                }
+              }, 30000);
+            }
+            
+            this.markAsSaved();
+            console.log('✅ Save process completed for:', currentPresetName);
+          } else {
+            throw new Error('Failed to save presets to server');
+          }
+        } catch (error) {
+          console.error('Save failed:', error);
+          
+          // Fallback: download file for manual saving
+          this.downloadPresetsFile(JSON.stringify({
+          version: '1.0.0',
+          updated: new Date().toISOString(),
+            presets: Array.from(this.presets.values())
+          }, null, 2));
+          
+          this.showSaveError('Auto-save failed. File downloaded for manual deployment.');
+        } finally {
+          // Restore save button
+          saveBtn.textContent = originalText;
+          saveBtn.classList.remove('saving');
+          saveBtn.disabled = false;
+          
+          // Hide progress after delay
+          setTimeout(() => {
+            this.elements.saveProgress.classList.remove('show');
+          }, 3000);
+        }
+      }
+      
+      showSaveProgress() {
+        if (!this.elements.saveProgress) {
+          console.error('❌ saveProgress element not found');
+          return;
+        }
+        
+        this.elements.saveProgress.classList.add('show');
+        
+        if (this.elements.progressFill) {
+          this.elements.progressFill.style.width = '0%';
+        }
+        
+        if (this.elements.saveProgressPercent) {
+          this.elements.saveProgressPercent.textContent = '0%';
+        }
+        
+        // Reset all steps
+        if (this.elements.progressSteps) {
+          this.elements.progressSteps.querySelectorAll('.progress-step').forEach(step => {
+            step.classList.remove('completed', 'active');
+          });
+        }
+        
+        const step1 = document.getElementById('step1');
+        if (step1) {
+          step1.classList.add('active');
+        }
+      }
+      
+      updateSaveProgress(step, message) {
+        const progress = (step / 4) * 100;
+        
+        if (this.elements.progressFill) {
+          this.elements.progressFill.style.width = progress + '%';
+        }
+        
+        if (this.elements.saveProgressPercent) {
+          this.elements.saveProgressPercent.textContent = Math.round(progress) + '%';
+        }
+        
+        // Update step states
+        for (let i = 1; i <= 4; i++) {
+          const stepEl = document.getElementById(`step${i}`);
+          if (!stepEl) continue;
+          
+          if (i < step) {
+            stepEl.classList.add('completed');
+            stepEl.classList.remove('active');
+          } else if (i === step) {
+            stepEl.classList.add('active');
+            stepEl.classList.remove('completed');
+            stepEl.innerHTML = stepEl.innerHTML.replace(/^[^🔄📤🚀✅]*/, message.includes('Validating') ? '🔄' : message.includes('Uploading') ? '📤' : message.includes('Deploying') ? '🚀' : '✅') + ' ' + message;
+          } else {
+            stepEl.classList.remove('completed', 'active');
+          }
+        }
+      }
+      
+      showSaveSuccess(message) {
+        this.elements.progressSteps.innerHTML = `
+          <div class="progress-step completed" style="color: var(--primary); font-weight: 600;">
+            ✅ ${message}
+          </div>
+        `;
+      }
+      
+      showSaveError(message) {
+        this.elements.progressSteps.innerHTML = `
+          <div class="progress-step" style="color: var(--danger); font-weight: 600;">
+            ❌ ${message}
+          </div>
+        `;
+      }
+      
+      sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+      
+      // === UTILITY FUNCTIONS ===
+      
+      sanitizePresetId(id) {
+        // Convert ID to valid format: only letters, numbers, hyphens, underscores
+        return id
+          .toLowerCase()
+          .replace(/\s+/g, '-')           // Replace spaces with hyphens
+          .replace(/[^a-z0-9_-]/g, '')    // Remove invalid characters
+          .replace(/-+/g, '-')            // Replace multiple hyphens with single
+          .replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
+      }
+      
+      generateUniqueId(baseName) {
+        const sanitizedBase = this.sanitizePresetId(baseName);
+        const timestamp = Date.now();
+        let counter = 1;
+        let candidateId = `${sanitizedBase}-${timestamp}`;
+        
+        // Ensure uniqueness
+        while (this.presets.has(candidateId)) {
+          candidateId = `${sanitizedBase}-${timestamp}-${counter}`;
+          counter++;
+        }
+        
+        return candidateId;
+      }
+
+      // === CRUD OPERATIONS ===
+      
+      showConfirmation(title, message, onConfirm, dangerAction = false) {
+        this.elements.confirmTitle.textContent = title;
+        this.elements.confirmMessage.textContent = message;
+        this.elements.confirmationModal.style.display = 'flex';
+        
+        // Style confirm button based on action type
+        this.elements.confirmOk.className = dangerAction ? 'btn danger' : 'btn primary';
+        this.elements.confirmOk.textContent = dangerAction ? 'Delete' : 'Confirm';
+        
+        // Remove previous event listeners
+        this.elements.confirmOk.replaceWith(this.elements.confirmOk.cloneNode(true));
+        this.elements.confirmOk = document.getElementById('confirmOk');
+        
+        // Add new event listener
+        this.elements.confirmOk.addEventListener('click', () => {
+          this.hideConfirmation();
+          onConfirm();
+        });
+      }
+      
+      hideConfirmation() {
+        this.elements.confirmationModal.style.display = 'none';
+      }
+      
+      async deletePreset(presetId) {
+        const preset = this.presets.get(presetId);
+        if (!preset) return;
+        
+        this.showConfirmation(
+          'Delete Preset',
+          `Are you sure you want to delete "${preset.name}"? This action cannot be undone.`,
+          async () => {
+            try {
+              // Remove from memory
+              this.presets.delete(presetId);
+              
+              // If this was the current preset, clear editor
+              if (this.currentPreset && this.currentPreset.id === presetId) {
+                this.currentPreset = null;
+                this.elements.emptyState.style.display = 'flex';
+                this.elements.presetEditor.classList.remove('active');
+              }
+              
+              // Update UI immediately
+              this.renderPresetList();
+              this.elements.presetCount.textContent = `${this.presets.size} presets`;
+              
+              // Save to server
+              await this.saveAllPresets();
+              
+              console.log(`✅ Deleted preset: ${preset.name}`);
+            } catch (error) {
+              console.error('Failed to delete preset:', error);
+              alert('Failed to delete preset. Please try again.');
+              // Reload presets to restore state
+              await this.loadPresets(true);
+            }
+          },
+          true
+        );
+      }
+      
+      async duplicatePreset(presetId) {
+        const originalPreset = this.presets.get(presetId);
+        if (!originalPreset) return;
+        
+        // Generate valid ID (sanitize the original ID)
+        const sanitizedBaseId = this.sanitizePresetId(originalPreset.id);
+        const timestamp = Date.now();
+        let copyCounter = 1;
+        let newId = `${sanitizedBaseId}-copy-${timestamp}`;
+        let newName = `${originalPreset.name} (Copy)`;
+        
+        // Ensure ID is truly unique
+        while (this.presets.has(newId)) {
+          copyCounter++;
+          newId = `${sanitizedBaseId}-copy-${timestamp}-${copyCounter}`;
+          newName = `${originalPreset.name} (Copy ${copyCounter})`;
+        }
+        
+        console.log(`🔄 Creating duplicate: ${originalPreset.name} → ${newName}`);
+        console.log(`🔧 ID transformation: "${originalPreset.id}" → "${newId}"`);
+        
+        // Create duplicate with new ID and name
+        const duplicatePreset = {
+          ...JSON.parse(JSON.stringify(originalPreset)), // Deep clone
+          id: newId,
+          name: newName
+        };
+        
+        try {
+          // Add to memory
+          this.presets.set(newId, duplicatePreset);
+          console.log(`📝 Added duplicate to memory: ${newId}`);
+          
+          // Update UI
+          this.renderPresetList();
+          this.elements.presetCount.textContent = `${this.presets.size} presets`;
+          
+          // Auto-select the new preset (but don't trigger auto-save)
+          setTimeout(() => {
+            // Temporarily disable auto-save during selection
+            const originalTimeout = this.autoSaveTimeout;
+            this.autoSaveTimeout = null;
+            
+            this.selectPreset(newId);
+            
+            // Restore auto-save timeout
+            this.autoSaveTimeout = originalTimeout;
+          }, 100);
+          
+          // Clear any pending auto-save to avoid conflicts
+          if (this.autoSaveTimeout) {
+            clearTimeout(this.autoSaveTimeout);
+            this.autoSaveTimeout = null;
+            console.log('🚫 Cleared auto-save timeout to avoid conflicts');
+          }
+          
+          // Save to server
+          console.log(`💾 Saving duplicated preset to server...`);
+          const saveResult = await this.saveAllPresets();
+          
+          if (saveResult) {
+            console.log(`✅ Duplicate save successful`);
+          } else {
+            console.warn(`⚠️ Duplicate save failed - using fallback`);
+          }
+          
+          console.log(`✅ Duplicated preset: ${originalPreset.name} → ${newName}`);
+        } catch (error) {
+          console.error('Failed to duplicate preset:', error);
+          alert('Failed to duplicate preset. Please try again.');
+        }
+      }
+      
+      async renamePreset(presetId) {
+        const preset = this.presets.get(presetId);
+        if (!preset) return;
+        
+        const newName = prompt('Enter new name for the preset:', preset.name);
+        if (!newName || newName.trim() === '' || newName === preset.name) return;
+        
+        try {
+          // Update preset name
+          preset.name = newName.trim();
+          this.presets.set(presetId, preset);
+          
+          // If this is the current preset, update editor
+          if (this.currentPreset && this.currentPreset.id === presetId) {
+            this.currentPreset.name = newName.trim();
+            this.elements.presetName.value = newName.trim();
+            this.elements.editorTitle.textContent = newName.trim();
+          }
+          
+          // Update UI
+          this.renderPresetList();
+          
+          // Save to server
+          await this.saveAllPresets();
+          
+          console.log(`✅ Renamed preset: ${presetId} → ${newName}`);
+        } catch (error) {
+          console.error('Failed to rename preset:', error);
+          alert('Failed to rename preset. Please try again.');
+        }
+      }
+      
+      exportPreset(presetId) {
+        const preset = this.presets.get(presetId);
+        if (!preset) return;
+        
+        // Create export data
+        const exportData = {
+          version: '1.0.0',
+          exported: new Date().toISOString(),
+          preset: preset
+        };
+        
+        // Download as JSON file
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${preset.id}.preset.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log(`✅ Exported preset: ${preset.name}`);
+      }
+      
+      importPreset() {
+        document.getElementById('presetFileInput').click();
+      }
+      
+      async handlePresetImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        try {
+          const content = await this.readFileAsText(file);
+          const importData = JSON.parse(content);
+          
+          // Validate import data
+          const validationResult = this.validatePresetImport(importData);
+          if (!validationResult.valid) {
+            alert(`Import failed: ${validationResult.error}`);
+            return;
+          }
+          
+          const preset = importData.preset;
+          
+          // Check for ID conflicts
+          if (this.presets.has(preset.id)) {
+            const overwrite = confirm(`A preset with ID "${preset.id}" already exists. Do you want to overwrite it?`);
+            if (!overwrite) {
+              // Generate new unique ID
+              preset.id = `${preset.id}-imported-${Date.now()}`;
+              preset.name = `${preset.name} (Imported)`;
+            }
+          }
+          
+          // Add to presets
+          this.presets.set(preset.id, preset);
+          
+          // Update UI
+          this.renderPresetList();
+          this.elements.presetCount.textContent = `${this.presets.size} presets`;
+          
+          // Auto-select imported preset
+          setTimeout(() => {
+            this.selectPreset(preset.id);
+          }, 100);
+          
+          // Save to server
+          await this.saveAllPresets();
+          
+          alert(`✅ Successfully imported preset: ${preset.name}`);
+          console.log(`✅ Imported preset: ${preset.name}`);
+          
+        } catch (error) {
+          console.error('Import failed:', error);
+          alert(`Import failed: ${error.message}`);
+        } finally {
+          // Clear file input
+          event.target.value = '';
+        }
+      }
+      
+      readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = (e) => reject(new Error('Failed to read file'));
+          reader.readAsText(file);
+        });
+      }
+      
+      validatePresetImport(data) {
+        // Check basic structure
+        if (!data || typeof data !== 'object') {
+          return { valid: false, error: 'Invalid file format' };
+        }
+        
+        if (!data.preset) {
+          return { valid: false, error: 'No preset data found' };
+        }
+        
+        const preset = data.preset;
+        
+        // Check required fields
+        if (!preset.id || typeof preset.id !== 'string') {
+          return { valid: false, error: 'Preset must have a valid ID' };
+        }
+        
+        if (!preset.name || typeof preset.name !== 'string') {
+          return { valid: false, error: 'Preset must have a valid name' };
+        }
+        
+        // Validate layers if present
+        if (preset.layers && Array.isArray(preset.layers)) {
+          for (let i = 0; i < preset.layers.length; i++) {
+            const layer = preset.layers[i];
+            if (!layer.src || typeof layer.src !== 'string') {
+              return { valid: false, error: `Layer ${i + 1} has invalid source` };
+            }
+          }
+        }
+        
+        // Validate numeric fields
+        if (preset.defaultScale !== undefined && (typeof preset.defaultScale !== 'number' || preset.defaultScale < 1 || preset.defaultScale > 400)) {
+          return { valid: false, error: 'Default scale must be between 1 and 400' };
+        }
+        
+        if (preset.defaultStrength !== undefined && (typeof preset.defaultStrength !== 'number' || preset.defaultStrength < -600 || preset.defaultStrength > 600)) {
+          return { valid: false, error: 'Default strength must be between -600 and 600' };
+        }
+        
+        return { valid: true };
+      }
+      
+      validateCurrentPreset() {
+        if (!this.currentPreset) return { valid: false, error: 'No preset selected' };
+        
+        const preset = this.currentPreset;
+        
+        // Check required fields
+        if (!preset.id || preset.id.trim() === '') {
+          return { valid: false, error: 'Preset ID is required' };
+        }
+        
+        if (!preset.name || preset.name.trim() === '') {
+          return { valid: false, error: 'Preset name is required' };
+        }
+        
+        // Check ID uniqueness (excluding current preset)
+        for (const [id, existingPreset] of this.presets) {
+          if (existingPreset.id === preset.id && existingPreset.id !== this.currentPreset.id) {
+            return { valid: false, error: 'Preset ID must be unique' };
+          }
+        }
+        
+        // Validate ID format (alphanumeric, hyphens, underscores only)
+        if (!/^[a-zA-Z0-9_-]+$/.test(preset.id)) {
+          return { valid: false, error: 'Preset ID can only contain letters, numbers, hyphens, and underscores' };
+        }
+        
+        // Check layers
+        if (!preset.layers || preset.layers.length === 0) {
+          return { valid: false, error: 'Preset must have at least one layer' };
+        }
+        
+        // Validate each layer
+        for (let i = 0; i < preset.layers.length; i++) {
+          const layer = preset.layers[i];
+          if (!layer.src || layer.src.trim() === '') {
+            return { valid: false, error: `Layer ${i + 1} must have a displacement map selected` };
+          }
+        }
+        
+        return { valid: true };
+      }
+      
+      async saveAllPresets() {
+        // Prevent concurrent saves
+        if (this.isSaving) {
+          console.log('⏳ Save already in progress, skipping...');
+          return false;
+        }
+        
+        this.isSaving = true;
+        console.log(`💾 saveAllPresets called - saving ${this.presets.size} presets from memory`);
+        console.log(`📋 Preset IDs in memory:`, Array.from(this.presets.keys()));
+        
+        try {
+          // Generate complete presets.json with categories
+          const presetsArray = Array.from(this.presets.values());
+          console.log(`📊 Converting ${presetsArray.length} presets to manifest`);
+        
+        const manifest = {
+          version: '2.0.0', // Updated version for new category system
+          updated: new Date().toISOString(),
+          categories: Array.from(this.categories.values()).sort((a, b) => a.order - b.order),
+          presets: presetsArray.sort((a, b) => {
+            // Sort by primary category order, then by preset order, then by name
+            const primaryCategoryA = a.categories?.[0] || 'custom';
+            const primaryCategoryB = b.categories?.[0] || 'custom';
+            
+            const categoryA = this.categories.get(primaryCategoryA);
+            const categoryB = this.categories.get(primaryCategoryB);
+            
+            const orderA = categoryA?.order ?? 999;
+            const orderB = categoryB?.order ?? 999;
+            
+            if (orderA !== orderB) return orderA - orderB;
+            
+            const presetOrderA = a.order ?? 9999;
+            const presetOrderB = b.order ?? 9999;
+            if (presetOrderA !== presetOrderB) return presetOrderA - presetOrderB;
+            
+            return a.name.localeCompare(b.name);
+          })
+        };
+
+          console.log(`📦 Manifest created: ${manifest.presets.length} presets, ${manifest.categories.length} categories`);
+          console.log(`📋 Manifest preset IDs:`, manifest.presets.map(p => p.id));
+
+        const output = JSON.stringify(manifest, null, 2);
+        
+          // Try to save to server
+          const response = await fetch('/api/save-presets', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: output
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+          }
+          
+          console.log(`✅ Successfully saved ${manifest.presets.length} presets to server`);
+          return true;
+          
+        } catch (error) {
+          console.warn('Server save failed, downloading backup:', error);
+          
+          // Fallback: download file for manual saving
+          this.downloadPresetsFile(output);
+          return false;
+        } finally {
+          this.isSaving = false;
+          console.log('🔓 Save lock released');
+        }
+      }
+
+      downloadPresetsFile(content) {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'presets.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // === CDN PROPAGATION HELPERS ===
+      
+      async checkGithubPropagation(expectedCount, maxAttempts = 3) {
+        console.log(`🔍 Checking GitHub CDN propagation (expecting ${expectedCount} presets)...`);
+        
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            // Use direct GitHub URL to check propagation (bypassing our proxy)
+            const githubUrl = `https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/presets.json?t=${Date.now()}`;
+            const response = await fetch(githubUrl, { cache: 'no-cache' });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const actualCount = data.presets?.length || 0;
+              
+              console.log(`🔍 Attempt ${attempt}: GitHub has ${actualCount} presets (expected ${expectedCount})`);
+              
+              if (actualCount >= expectedCount) {
+                console.log('✅ GitHub CDN propagation complete');
+                return { success: true, actualCount, attempts: attempt };
+              }
+            }
+            
+            // Wait before next attempt
+            if (attempt < maxAttempts) {
+              const delay = attempt * 2000; // Increasing delay: 2s, 4s, 6s
+              console.log(`⏳ CDN not ready, waiting ${delay}ms before attempt ${attempt + 1}...`);
+              await this.sleep(delay);
+            }
+            
+          } catch (error) {
+            console.warn(`⚠️ Propagation check attempt ${attempt} failed:`, error.message);
+            if (attempt < maxAttempts) {
+              await this.sleep(2000);
+            }
+          }
+        }
+        
+        console.warn(`⚠️ GitHub CDN propagation incomplete after ${maxAttempts} attempts`);
+        return { success: false, attempts: maxAttempts };
+      }
+
+      // === URL HELPERS ===
+      
+      getPresetsUrl(forceRefresh = false) {
+        if (this.isDevelopment) {
+          // Use local proxy to avoid CORS in development
+          const cacheParam = forceRefresh ? `?t=${Date.now()}` : '';
+          return `/api/github/assets/presets.json${cacheParam}`;
+        } else {
+          // Production: direct GitHub access
+          const cacheParam = forceRefresh ? `?t=${Date.now()}` : '';
+          return `https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/presets.json${cacheParam}`;
+        }
+      }
+      
+      getGithubAssetsUrl(forceRefresh = false) {
+        if (this.isDevelopment) {
+          // Use GitHub API proxy for development
+          const cacheParam = forceRefresh ? `?ref=main&t=${Date.now()}` : '';
+          return `https://api.github.com/repos/bbssppllvv/Dispace-Figma-Plugin/contents/assets/displacement-maps/svg${cacheParam}`;
+        } else {
+          // Production: direct GitHub API access
+          const cacheParam = forceRefresh ? `?ref=main&t=${Date.now()}` : '';
+          return `https://api.github.com/repos/bbssppllvv/Dispace-Figma-Plugin/contents/assets/displacement-maps/svg${cacheParam}`;
+        }
+      }
+
+      // === CATEGORY MANAGEMENT ===
+      
+      getDefaultCategories() {
+        return [
+          { id: 'popular', name: 'Popular', order: 1 },
+          { id: 'ribbed-glass', name: 'Ribbed glass', order: 2 },
+          { id: 'fabric', name: 'Fabric', order: 3 },
+          { id: 'geometric', name: 'Geometric', order: 4 },
+          { id: 'organic', name: 'Organic', order: 5 },
+          { id: 'custom', name: 'Custom', order: 100 }
+        ];
+      }
+      
+      processPresetForNewCategorySystem(preset) {
+        // Sanitize preset ID if needed
+        const originalId = preset.id;
+        const sanitizedId = this.sanitizePresetId(preset.id);
+        
+        if (originalId !== sanitizedId) {
+          console.log(`🔧 Auto-sanitizing preset ID: "${originalId}" → "${sanitizedId}"`);
+          preset.id = sanitizedId;
+        }
+        
+        // Migrate legacy category to new categories array
+        if (preset.category && !preset.categories) {
+          // Map legacy category names to new category IDs
+          const categoryMap = {
+            'Popular': 'popular',
+            'Ribbed glass': 'ribbed-glass',
+            'Fabric': 'fabric',
+            'Geometric': 'geometric',
+            'Organic': 'organic',
+            'Custom': 'custom'
+          };
+          
+          const categoryId = categoryMap[preset.category] || this.findOrCreateCategoryId(preset.category);
+          preset.categories = [categoryId];
+        }
+        
+        // Ensure categories array exists
+        if (!preset.categories) {
+          preset.categories = ['custom'];
+        }
+        
+        // Maintain legacy field for compatibility
+        if (preset.categories.length > 0) {
+          const primaryCategory = this.categories.get(preset.categories[0]);
+          preset.category = primaryCategory ? primaryCategory.name : preset.categories[0];
+        }
+        
+        return preset;
+      }
+      
+      findOrCreateCategoryId(categoryName) {
+        // Try to find existing category by name
+        for (const [id, category] of this.categories) {
+          if (category.name === categoryName) {
+            return id;
+          }
+        }
+        
+        // Create new category ID from name
+        return categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      }
+      
+      toggleCategoryDropdown() {
+        const isOpen = this.elements.categoryDropdown.classList.contains('show');
+        
+        if (isOpen) {
+          this.elements.categoryDropdown.classList.remove('show');
+        } else {
+          this.renderCategoryOptions();
+          this.elements.categoryDropdown.classList.add('show');
+        }
+      }
+      
+      renderCategoryOptions() {
+        const selectedCategories = this.currentPreset?.categories || [];
+        
+        this.elements.categoryList.innerHTML = '';
+        
+        // Sort categories by order
+        const sortedCategories = Array.from(this.categories.values()).sort((a, b) => a.order - b.order);
+        
+        sortedCategories.forEach(category => {
+          const isSelected = selectedCategories.includes(category.id);
+          
+          const option = document.createElement('div');
+          option.className = `category-option ${isSelected ? 'selected' : ''}`;
+          option.innerHTML = `
+            <div class="category-option-info">
+              <div class="category-option-name">${category.name}</div>
+              <div class="category-option-meta">Order: ${category.order}</div>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              ${isSelected ? '✓' : ''}
+            </div>
+          `;
+          
+          option.addEventListener('click', () => this.toggleCategorySelection(category.id));
+          this.elements.categoryList.appendChild(option);
+        });
+      }
+      
+      toggleCategorySelection(categoryId) {
+        if (!this.currentPreset) return;
+        
+        if (!this.currentPreset.categories) {
+          this.currentPreset.categories = [];
+        }
+        
+        const index = this.currentPreset.categories.indexOf(categoryId);
+        
+        if (index > -1) {
+          // Remove category
+          this.currentPreset.categories.splice(index, 1);
+        } else {
+          // Add category
+          this.currentPreset.categories.push(categoryId);
+        }
+        
+        this.updateSelectedCategoriesDisplay();
+        this.renderCategoryOptions(); // Re-render to update selection state
+        this.markAsUnsaved();
+      }
+      
+      updateSelectedCategoriesDisplay() {
+        if (!this.currentPreset || !this.currentPreset.categories || this.currentPreset.categories.length === 0) {
+          this.elements.selectedCategories.innerHTML = '<span class="placeholder">Select categories...</span>';
+          return;
+        }
+        
+        const tags = this.currentPreset.categories.map(categoryId => {
+          const category = this.categories.get(categoryId);
+          const name = category ? category.name : categoryId;
+          
+          return `
+            <div class="category-tag">
+              ${name}
+              <button type="button" class="remove-btn" onclick="studio.removeCategoryFromPreset('${categoryId}')">×</button>
+            </div>
+          `;
+        }).join('');
+        
+        this.elements.selectedCategories.innerHTML = tags;
+      }
+      
+      removeCategoryFromPreset(categoryId) {
+        if (!this.currentPreset || !this.currentPreset.categories) return;
+        
+        const index = this.currentPreset.categories.indexOf(categoryId);
+        if (index > -1) {
+          this.currentPreset.categories.splice(index, 1);
+          this.updateSelectedCategoriesDisplay();
+          this.renderCategoryOptions(); // Re-render to update selection state
+          this.markAsUnsaved();
+        }
+      }
+      
+      filterCategoryOptions() {
+        const searchTerm = this.elements.categorySearch.value.toLowerCase();
+        const options = this.elements.categoryList.querySelectorAll('.category-option');
+        
+        options.forEach(option => {
+          const name = option.querySelector('.category-option-name').textContent.toLowerCase();
+          const visible = name.includes(searchTerm);
+          option.style.display = visible ? 'flex' : 'none';
+        });
+      }
+      
+      openCategoryManager() {
+        alert('Category Manager coming soon! For now, categories are managed automatically.');
+        // TODO: Implement category management UI
+      }
+
+      async runDiagnostics() {
+        console.log('🔍 Running PresetStudio diagnostics...');
+        
+        // Check for invalid IDs
+        const invalidIds = [];
+        for (const [id, preset] of this.presets) {
+          if (!/^[a-zA-Z0-9_-]+$/.test(preset.id)) {
+            invalidIds.push({ id: preset.id, name: preset.name });
+          }
+        }
+        
+        const diagnostics = {
+          timestamp: new Date().toISOString(),
+          studioPresets: this.presets.size,
+          studioCategories: this.categories.size,
+          invalidIds: invalidIds.length,
+          invalidIdsList: invalidIds,
+          currentPreset: this.currentPreset ? {
+            id: this.currentPreset.id,
+            name: this.currentPreset.name,
+            categories: this.currentPreset.categories,
+            idValid: /^[a-zA-Z0-9_-]+$/.test(this.currentPreset.id)
+          } : null
+        };
+        
+        // Test loading using the same method as normal loading
+        try {
+          console.log('📡 Testing GitHub access via proxy/direct...');
+          const testUrl = this.getPresetsUrl(true);
+          console.log(`🔗 Test URL: ${testUrl}`);
+          
+          const response = await fetch(testUrl);
+          if (response.ok) {
+            const data = await response.json();
+            diagnostics.githubPresets = data.presets?.length || 0;
+            diagnostics.githubCategories = data.categories?.length || 0;
+            diagnostics.githubVersion = data.version;
+            diagnostics.githubUpdated = data.updated;
+            console.log(`✅ GitHub data: ${diagnostics.githubPresets} presets, ${diagnostics.githubCategories} categories`);
+          } else {
+            diagnostics.githubError = `HTTP ${response.status}`;
+            console.error(`❌ GitHub access failed: ${response.status}`);
+          }
+        } catch (error) {
+          diagnostics.githubError = error.message;
+          console.error('❌ GitHub access error:', error);
+        }
+        
+        // Test what the plugin would see (direct GitHub access)
+        try {
+          console.log('🔌 Testing plugin data source (direct GitHub)...');
+          const pluginUrl = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main/assets/presets.json';
+          
+          // In development, we can't test this due to CORS, so we use our proxy
+          const testUrl = this.isDevelopment ? this.getPresetsUrl(false) : pluginUrl;
+          console.log(`🔗 Plugin test URL: ${testUrl}`);
+          
+          const pluginResponse = await fetch(testUrl);
+          if (pluginResponse.ok) {
+            const pluginData = await pluginResponse.json();
+            diagnostics.pluginPresets = pluginData.presets?.length || 0;
+            diagnostics.pluginCategories = pluginData.categories?.length || 0;
+            console.log(`🔌 Plugin would see: ${diagnostics.pluginPresets} presets, ${diagnostics.pluginCategories} categories`);
+          }
+        } catch (error) {
+          diagnostics.pluginError = error.message;
+          console.error('❌ Plugin data test failed:', error);
+        }
+        
+        // Check for sync issues
+        if (diagnostics.studioPresets !== diagnostics.githubPresets) {
+          console.warn(`⚠️ SYNC ISSUE: Studio has ${diagnostics.studioPresets} presets, GitHub has ${diagnostics.githubPresets}`);
+          diagnostics.syncIssue = true;
+        }
+        
+        if (diagnostics.studioPresets !== diagnostics.pluginPresets) {
+          console.warn(`⚠️ PLUGIN SYNC ISSUE: Studio has ${diagnostics.studioPresets} presets, Plugin sees ${diagnostics.pluginPresets}`);
+          diagnostics.pluginSyncIssue = true;
+        }
+        
+        console.log('🔍 Diagnostics complete:', diagnostics);
+        
+        // Show results to user
+        const message = `
+📊 PresetStudio Diagnostics
+
+Studio Data:
+- Presets: ${diagnostics.studioPresets}
+- Categories: ${diagnostics.studioCategories}
+- Invalid IDs: ${diagnostics.invalidIds}
+- Current: ${diagnostics.currentPreset?.name || 'None'}${diagnostics.currentPreset && !diagnostics.currentPreset.idValid ? ' (Invalid ID!)' : ''}
+
+GitHub Source:
+- Presets: ${diagnostics.githubPresets || 'Error'}
+- Categories: ${diagnostics.githubCategories || 'Error'}
+- Version: ${diagnostics.githubVersion || 'Unknown'}
+
+Plugin View:
+- Presets: ${diagnostics.pluginPresets || 'Error'}
+- Categories: ${diagnostics.pluginCategories || 'Error'}
+
+${diagnostics.syncIssue ? '⚠️ SYNC ISSUE DETECTED!' : '✅ Data in sync'}
+${diagnostics.pluginSyncIssue ? '⚠️ PLUGIN SYNC ISSUE!' : '✅ Plugin data matches'}
+${diagnostics.invalidIds > 0 ? `⚠️ ${diagnostics.invalidIds} INVALID IDs FOUND!` : '✅ All IDs valid'}
+
+${diagnostics.invalidIds > 0 ? 'Use 🔧 Fix IDs button to repair them automatically.' : ''}
+
+Check console for detailed logs.
+        `;
+        
+        alert(message);
+        
+        return diagnostics;
+      }
+      
+      async fixInvalidIds() {
+        console.log('🔧 Scanning for invalid preset IDs...');
+        
+        const invalidPresets = [];
+        const idChanges = [];
+        
+        // Find presets with invalid IDs
+        for (const [currentId, preset] of this.presets) {
+          const sanitizedId = this.sanitizePresetId(preset.id);
+          if (preset.id !== sanitizedId) {
+            invalidPresets.push({
+              preset,
+              oldId: preset.id,
+              newId: sanitizedId
+            });
+          }
+        }
+        
+        if (invalidPresets.length === 0) {
+          alert('✅ All preset IDs are already valid!');
+          return;
+        }
+        
+        const message = `Found ${invalidPresets.length} presets with invalid IDs:\n\n` +
+          invalidPresets.map(item => `"${item.oldId}" → "${item.newId}"`).join('\n') +
+          '\n\nDo you want to fix them automatically?';
+        
+        if (!confirm(message)) {
+          return;
+        }
+        
+        console.log(`🔧 Fixing ${invalidPresets.length} invalid IDs...`);
+        
+        try {
+          // Update preset IDs
+          for (const item of invalidPresets) {
+            const { preset, oldId, newId } = item;
+            
+            // Ensure new ID is unique
+            let finalId = newId;
+            let counter = 1;
+            while (this.presets.has(finalId) && finalId !== oldId) {
+              finalId = `${newId}-${counter}`;
+              counter++;
+            }
+            
+            // Update preset
+            preset.id = finalId;
+            
+            // Remove old entry and add new one
+            this.presets.delete(oldId);
+            this.presets.set(finalId, preset);
+            
+            idChanges.push({ oldId, newId: finalId, name: preset.name });
+            
+            console.log(`✅ Fixed: "${oldId}" → "${finalId}" (${preset.name})`);
+          }
+          
+          // Update UI
+          this.renderPresetList();
+          
+          // If current preset was affected, update editor
+          if (this.currentPreset) {
+            const change = idChanges.find(c => c.name === this.currentPreset.name);
+            if (change) {
+              this.currentPreset.id = change.newId;
+              this.elements.presetId.value = change.newId;
+              console.log(`🔄 Updated current preset ID: ${change.newId}`);
+            }
+          }
+          
+          // Save changes
+          await this.saveAllPresets();
+          
+          const summary = idChanges.map(c => `• ${c.oldId} → ${c.newId}`).join('\n');
+          alert(`✅ Fixed ${idChanges.length} preset IDs:\n\n${summary}\n\nChanges saved and deployed!`);
+          
+        } catch (error) {
+          console.error('❌ Failed to fix IDs:', error);
+          alert(`Failed to fix IDs: ${error.message}`);
+        }
+      }
+      
+      async runSilentDiagnostics() {
+        try {
+          console.log('🔍 Running silent startup diagnostics...');
+          
+          // Test GitHub access using the same URL as normal loading
+          const testUrl = this.getPresetsUrl(false);
+          const response = await fetch(testUrl);
+          
+          if (response.ok) {
+            const data = await response.json();
+            const githubPresets = data.presets?.length || 0;
+            
+            if (this.presets.size !== githubPresets) {
+              console.warn(`⚠️ STARTUP SYNC WARNING: Studio loaded ${this.presets.size} presets, but GitHub has ${githubPresets}`);
+              
+              // Update status to show warning
+              this.elements.assetStatus.textContent = 'Sync warning';
+              this.elements.assetStatus.className = 'status-indicator';
+              this.elements.assetStatus.style.background = 'var(--warn)';
+              this.elements.assetStatus.title = 'Data sync issue detected. Click diagnostics (🔍) for details.';
+            } else {
+              console.log('✅ Startup sync check passed');
+            }
+          } else {
+            console.warn(`⚠️ Silent diagnostics HTTP error: ${response.status}`);
+          }
+        } catch (error) {
+          console.warn('⚠️ Silent diagnostics failed (likely CORS):', error.message);
+          // This is expected in development without proxy
+        }
+      }
+
+      exportCode() {
+        this.savePreset();
+      }
+      
+      handleKeyboardShortcuts(e) {
+        // Don't trigger shortcuts when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+        
+        // Ctrl/Cmd + S: Save preset
+        if (ctrlKey && e.key === 's') {
+          e.preventDefault();
+          if (this.currentPreset) {
+            this.savePreset();
+          }
+          return;
+        }
+        
+        // Ctrl/Cmd + N: New preset
+        if (ctrlKey && e.key === 'n') {
+          e.preventDefault();
+          this.createNewPreset();
+          return;
+        }
+        
+        // Ctrl/Cmd + O: Import preset
+        if (ctrlKey && e.key === 'o') {
+          e.preventDefault();
+          this.importPreset();
+          return;
+        }
+        
+        // Ctrl/Cmd + D: Duplicate current preset
+        if (ctrlKey && e.key === 'd') {
+          e.preventDefault();
+          if (this.currentPreset) {
+            this.duplicatePreset(this.currentPreset.id);
+          }
+          return;
+        }
+        
+        // Escape: Close modals
+        if (e.key === 'Escape') {
+          this.elements.assetModal.style.display = 'none';
+          this.hideConfirmation();
+          document.querySelectorAll('.action-dropdown').forEach(dropdown => {
+            dropdown.classList.remove('show');
+          });
+          return;
+        }
+        
+        // F2: Rename current preset
+        if (e.key === 'F2') {
+          e.preventDefault();
+          if (this.currentPreset) {
+            this.renamePreset(this.currentPreset.id);
+          }
+          return;
+        }
+        
+        // Delete: Delete current preset
+        if (e.key === 'Delete') {
+          e.preventDefault();
+          if (this.currentPreset) {
+            this.deletePreset(this.currentPreset.id);
+          }
+          return;
+        }
+        
+        // Ctrl/Cmd + F: Focus search
+        if (ctrlKey && e.key === 'f') {
+          e.preventDefault();
+          document.getElementById('searchPresets').focus();
+          return;
+        }
+      }
+    }
+
+    // Initialize
+    const studio = new PresetStudio();
+  </script>
+</body>
+</html>

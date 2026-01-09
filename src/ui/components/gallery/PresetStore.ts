@@ -1,7 +1,5 @@
-import { Preset } from '../../presets';
-import { presetService } from '../../services/PresetService';
-import { customPresetsManager, CustomPreset } from '../../customPresets';
-import { eventBus } from '../../core/EventBus';
+import { Preset, PresetCategory as CategoryData } from '../../presets';
+import { presetService, customPresetService, CustomPreset } from '../../services';
 
 export type PresetCategory = {
   name: string;
@@ -14,29 +12,28 @@ export class PresetStore {
 
   async loadAll(): Promise<void> {
     try {
-      console.log('🔄 PresetStore: Loading presets from CDN...');
       
-      // Загружаем пресеты с CDN через PresetService
+      // Load presets from CDN via PresetService
       const cdnPresets = await presetService.loadPresets();
-      console.log(`✅ PresetStore: Loaded ${cdnPresets.length} presets from CDN`);
       
-      // Загружаем кастомные пресеты
+      // Load custom presets
       let customPresets: CustomPreset[] = [];
-      if (customPresetsManager.isReady()) {
-        customPresets = await customPresetsManager.loadCustomPresets();
-        console.log(`✅ PresetStore: Loaded ${customPresets.length} custom presets`);
+      if (customPresetService.isReady()) {
+        customPresets = await customPresetService.loadCustomPresets();
+      } else {
+        // Wait for initialization if not ready
+        await customPresetService.waitForInitialization();
+        customPresets = await customPresetService.loadCustomPresets();
       }
       
-      // Объединяем все пресеты
+      // Merge all presets
       this.allPresets = [...cdnPresets, ...customPresets];
       this.isLoaded = true;
-      
-      console.log(`✅ PresetStore: Total ${this.allPresets.length} presets loaded`);
       
     } catch (error) {
       console.error('❌ PresetStore: Failed to load presets:', error);
       
-      // Fallback на пустой массив
+      // Fallback to empty array
       console.error('❌ PresetStore: CDN loading failed, using empty preset list');
       this.allPresets = [];
       this.isLoaded = true;
@@ -47,17 +44,53 @@ export class PresetStore {
     return this.allPresets;
   }
 
-  getCategories(): PresetCategory[] {
+  async getCategories(): Promise<PresetCategory[]> {
+    // Get category data with sort order
+    const categoriesData = await presetService.getCategoriesData();
+    const categoryMap = new Map<string, CategoryData>();
+    categoriesData.forEach(cat => categoryMap.set(cat.name, cat));
+    
+    // Group presets by categories
     const map = new Map<string, Preset[]>();
-    for (const p of this.allPresets) {
-      const list = map.get(p.category) || [];
-      list.push(p);
-      map.set(p.category, list);
+    
+    for (const preset of this.allPresets) {
+      // Support for multiple categories - add preset to each category
+      if (preset.categories && preset.categories.length > 0) {
+        for (const categoryId of preset.categories) {
+          // Find category by ID or name
+          const categoryData = categoriesData.find(cat => cat.id === categoryId || cat.name === categoryId);
+          const categoryName = categoryData ? categoryData.name : categoryId;
+          
+          const list = map.get(categoryName) || [];
+          list.push(preset);
+          map.set(categoryName, list);
+        }
+      } else if (preset.category) {
+        // Fallback to legacy category field
+        const list = map.get(preset.category) || [];
+        list.push(preset);
+        map.set(preset.category, list);
+      }
     }
+    
+    // Ensure Custom category exists
     if (!map.has('Custom')) {
       map.set('Custom', []);
     }
-    return Array.from(map.entries()).map(([name, presets]) => ({ name, presets }));
+    
+    // Sort categories by order
+    const sortedEntries = Array.from(map.entries()).sort(([nameA], [nameB]) => {
+      const catA = categoryMap.get(nameA);
+      const catB = categoryMap.get(nameB);
+      
+      const orderA = catA?.order ?? 999;
+      const orderB = catB?.order ?? 999;
+      
+      if (orderA !== orderB) return orderA - orderB;
+      return nameA.localeCompare(nameB);
+    });
+    
+    return sortedEntries.map(([name, presets]) => ({ name, presets }));
   }
 
   isReady(): boolean {
@@ -65,30 +98,27 @@ export class PresetStore {
   }
 
   async deleteCustomPreset(id: string): Promise<void> {
-    await customPresetsManager.deleteCustomPreset(id);
+    await customPresetService.deleteCustomPreset(id);
     await this.loadAll();
   }
 
   async saveCustomPreset(file: File): Promise<CustomPreset> {
-    const preset = await customPresetsManager.saveCustomPreset(file);
+    const preset = await customPresetService.saveCustomPreset(file);
     await this.loadAll();
     return preset;
   }
 
   /**
-   * Обновить пресеты с CDN (принудительно)
+   * Force refresh presets from CDN
    */
   async refreshFromCDN(): Promise<void> {
-    console.log('🔄 PresetStore: Force refreshing from CDN...');
     this.isLoaded = false;
     await presetService.refreshPresets();
     await this.loadAll();
     
-    // Уведомляем UI об обновлении
+    // Notify UI about update
     document.dispatchEvent(new CustomEvent('presets:refreshed', {
       detail: { presets: this.allPresets }
     }));
   }
 }
-
-

@@ -25,6 +25,16 @@ export interface EffectSettings {
   blur: number;
   soft: number;
   scale: number;
+  dissolveStrength: number;
+  grain: number;
+  grainSize: number;
+  
+  // Reflect settings
+  reflectStrength: number;
+  reflectSoftness: number;
+  reflectSharpness: number;
+  reflectLightX: number;
+  reflectLightY: number;
 }
 
 export interface ImageDimensions {
@@ -43,9 +53,18 @@ export interface SVGElements {
   feDispMapDissolve: SVGFEDisplacementMapElement;
   feGaussianBlur: SVGFEGaussianBlurElement;
   feMapGaussianBlur: SVGFEGaussianBlurElement;
+  feGrainAlpha: SVGFEFuncAElement;
+  feGrainTurbulence: SVGFETurbulenceElement;
   outputRect: SVGRectElement;
   maskRect: SVGRectElement;
   noiseTexture: SVGImageElement;
+  
+  // Reflect elements
+  feReflectBlur: SVGFEGaussianBlurElement;
+  feSpecularLighting: SVGFESpecularLightingElement;
+  fePointLight: SVGFEPointLightElement;
+  feReflectComposite: SVGFECompositeElement;
+  feReflectBlend: SVGFEBlendElement;
 }
 
 export interface CanvasResources {
@@ -89,7 +108,7 @@ export interface EngineState {
   layerImages?: Array<{
     image: HTMLImageElement;
     tiling: 'tiled' | 'stretched';
-    scale?: number; // percent (if undefined, falls back to global scalePct)
+    scaleMultiplier?: number; // multiplier for global scale (default 1.0)
     scaleMode?: 'uniform' | 'xOnly' | 'yOnly';
     opacity?: number; // 0..1
     blendMode?: GlobalCompositeOperation;
@@ -99,6 +118,7 @@ export interface EngineState {
     offsetY?: number; // px
   }>;
   scalePct: number;
+  textureScale: number; // multiplier for global scale (1.0 = no change)
   // Removed: global scaleMode (use per-layer on layerImages)
   // scaleMode?: 'uniform' | 'xOnly' | 'yOnly';
   currentMapLoadingUrl: string | null;
@@ -116,15 +136,31 @@ export interface DisplacementEngineAPI {
   // Effect settings
   setStrength(val: number): void;
   setScale(val: number): void;
+  setTextureScale(val: number): void;
   setScaleMode(mode: 'uniform' | 'xOnly' | 'yOnly'): void;
   setChromaticAberration(val: number): void;
   setBlur(val: number): void;
   setSoft(val: number): void;
   setDissolveStrength(val: number): void;
-  
+  setGrain(val: number): void;
+  setGrainSize(val: number): void;
+    
+  // Reflect effect operations
+  setReflectStrength(val: number): void;
+  setReflectSoftness(val: number): void;
+  setReflectSharpness(val: number): void;
+  setReflectLightPosition(x: number, y: number): void;
+    
+  // Batch update
+  setEffectSettings(settings: Partial<EffectSettings>): void;
+    
   // Batch rendering control
   setBatchMode(enabled: boolean): void;
   triggerBatchUpdate(): void;
+  triggerUpdate(): void;
+
+  // Interaction state for progressive rendering
+  setInteractionState(active: boolean): void;
   
   // Image operations
   loadSourceFromBytes(bytes: Uint8Array): Promise<void>;
@@ -137,10 +173,16 @@ export interface DisplacementEngineAPI {
    */
   getThumbnailBytes(maxSide?: number): Promise<Uint8Array>;
   
-  // Reflect effect operations
-  setReflectOpacity(opacity: number): void;
-  setReflectSharpness(sharpness: number): void;
-  destroyReflectEffect(): void;
+  /**
+   * Renders a thumbnail directly to a Data URL with internal cropping.
+   * Eliminates multiple encode/decode steps for max performance.
+   */
+  getThumbnailDataUrl(maxSide?: number, cropFactor?: number): Promise<string>;
+  
+  // Reflect effect operations - TODO: Future implementation
+  // setReflectEnabled(enabled: boolean): void;
+  // setReflectStrength(val: number): void;
+  // etc.
   
   // Resource management
   dispose(): void;
@@ -155,6 +197,9 @@ export interface DisplacementEngineAPI {
       soft: number;
       dissolveStrength: string;
       displacementMapUrl: string;
+      scale: number;
+      grain?: number;
+      grainSize?: number;
     };
   };
   
@@ -183,6 +228,13 @@ export interface DisplacementEngineAPI {
     soft: number;
     scale: number;
     dissolveStrength: string;
+    grain: number;
+    grainSize: number;
+    reflectStrength: number;
+    reflectSoftness: number;
+    reflectSharpness: number;
+    reflectLightX: number;
+    reflectLightY: number;
   };
 
   /**
@@ -211,9 +263,9 @@ export interface DisplacementEngineAPI {
 
 export interface DisplacementEngineInitOptions {
   /**
-   * Disable optional reflect effect to improve performance for thumbnails
+   * Placeholder for future reflect effect implementation
    */
-  enableReflectEffect?: boolean;
+  enableReflectEffect?: boolean; // Currently unused, reserved for future
   /**
    * Override maximum canvas size used internally for preview rendering
    */
@@ -234,7 +286,7 @@ export interface DisplacementEngineInitOptions {
 export interface LayerSpec {
   src: string | File | HTMLImageElement;
   tiling: 'tiled' | 'stretched';
-  scale?: number; // percent
+  scaleMultiplier?: number; // multiplier for global scale (default 1.0)
   scaleMode?: 'uniform' | 'xOnly' | 'yOnly';
   opacity?: number; // 0..1
   blendMode?: GlobalCompositeOperation;

@@ -60,41 +60,38 @@ assets/                  # CDN assets
 └── manifest.json       # Asset registry
 
 tools/                   # Development tools
-├── preset-builder-pro.html
+├── preset-studio/       # React-based Preset Studio v2
 └── deploy-assets.js
 ```
 
 ## Creating Presets
 
-### Using Preset Builder
+### Using Preset Studio v2
 
-1. Open `tools/preset-builder-pro.html`
-2. Upload displacement maps
-3. Configure layers and effects
-4. Generate TypeScript definition
-5. Save to `src/ui/presets/definitions/`
+1. Run `npm run preset:studio:v2`
+2. Open the URL provided (usually http://localhost:5173)
+3. Create and tweak your effect
+4. Export the preset JSON
+5. Add the new preset to `assets/presets.json`
+6. Commit changes to trigger CDN deployment
 
-### Manual Creation
+### JSON Format
 
-```typescript
-import type { Preset } from '../types';
-
-const preset: Preset = {
-  id: 'custom-effect',
-  name: 'Custom Effect',
-  category: 'Custom',
-  defaultScale: 32,
-  defaultStrength: 133,
-  layers: [
+```json
+{
+  "id": "custom-effect",
+  "name": "Custom Effect",
+  "categories": ["custom"],
+  "defaultScale": 32,
+  "defaultStrength": 133,
+  "layers": [
     {
-      src: 'resource://displacement-map',
-      tiling: 'tiled',
-      scaleMode: 'uniform'
+      "src": "resource://displacement-map",
+      "tiling": "tiled",
+      "scaleMode": "uniform"
     }
   ]
-};
-
-export default preset;
+}
 ```
 
 ## Asset Management

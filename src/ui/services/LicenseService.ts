@@ -1,7 +1,7 @@
 /**
  * License Service
  * 
- * Простое управление Free/Pro состоянием для Figma плагина.
+ * Simple Free/Pro state management for Figma plugin.
  * 
  * TODO: This service will need Stripe integration for production:
  * - Replace upgradeToPro() with real Stripe Checkout
@@ -119,11 +119,11 @@ export class LicenseService {
     
     if (!DEV_MODE_ENABLED) return false;
     
-    // В Figma плагинах проверяем Vite dev режим или явно включаем для разработки
+    // In Figma plugins check Vite dev mode or explicitly enable for development
     try {
       return (import.meta as any).env?.DEV || DEV_MODE_ENABLED;
     } catch {
-      // Если import.meta недоступен, используем флаг
+      // If import.meta is unavailable, use flag
       return DEV_MODE_ENABLED;
     }
   }
@@ -137,14 +137,15 @@ export class LicenseService {
       return;
     }
 
-    // Dev mode: load from storage adapter
+    // Dev mode: load from storage adapter (may fail silently in Figma sandbox)
     try {
       const saved = await this.storage.getItem('license-dev');
       if (saved === 'pro' || saved === 'free') {
         this.currentState = saved;
       }
     } catch (error) {
-      console.warn('Failed to load dev license state:', error);
+      // Silently ignore storage errors - they're expected in Figma sandbox
+      // Storage is not critical for dev mode functionality
     }
   }
 
@@ -157,11 +158,12 @@ export class LicenseService {
       return;
     }
 
-    // Dev mode: save to storage adapter
+    // Dev mode: save to storage adapter (may fail silently in Figma sandbox)
     try {
       await this.storage.setItem('license-dev', this.currentState);
     } catch (error) {
-      console.warn('Failed to save dev license state:', error);
+      // Silently ignore storage errors - they're expected in Figma sandbox
+      // Storage is not critical for dev mode functionality
     }
   }
 

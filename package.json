@@ -5,15 +5,19 @@
   "scripts": {
     "type-check": "tsc --noEmit --project tsconfig.json",
     "build:ui": "vite build",
-    "build:code": "esbuild src/code.ts --bundle --minify --outfile=dist/code.js",
-    "build": "npm run type-check && npm run build:ui && npm run build:code",
+    "build:code": "esbuild src/code.ts --bundle --minify --format=iife --platform=browser --outfile=dist/code.js",
+    "build": "npm run type-check && npm run build:ui && npm run build:code && node tools/inject-html.js",
     "watch:ui": "vite build --watch",
-    "watch": "concurrently \"npm:watch:ui\" \"esbuild src/code.ts --outfile=dist/code.js --watch\"",
-    "preset:studio": "node tools/dev-server.js"
+    "watch": "concurrently \"npm:watch:ui\" \"npm run watch:code\" \"node tools/watch-code.js\"",
+    "watch:code": "esbuild src/code.ts --bundle --format=iife --platform=browser --outfile=dist/code.js --watch",
+    "preset:studio": "node tools/dev-server.js",
+    "preset:studio:dev": "concurrently \"node --watch tools/dev-server.js\" \"npm run preset:studio:v2\"",
+    "preset:studio:v2": "cd tools/preset-studio && npm run dev",
+    "preset:studio:api": "node tools/dev-server.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "",
   "devDependencies": {
     "@figma/plugin-typings": "^1.110.0",

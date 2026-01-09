@@ -18,7 +18,7 @@
  * @module ImageLoader
  */
 
-import { processImageForPreview } from '../utils/image';
+import { processImageForPreview, createMirroredTexture } from '../utils/image';
 import { resolveResourceUrl } from '../utils/resource-resolver';
 import { APP_CONFIG } from '../config/constants';
 import { showSpinner } from '../utils/spinner';
@@ -27,6 +27,7 @@ import type { SVGElements, EngineState, MapSource, MultiLayerMapSource } from '.
 export class ImageLoader {
   // Store both original and preview textures for dual-mode rendering
   private originalMirroredDataUrl: string | null = null;
+  private originalDataUrl: string | null = null; // Store source for lazy high-res generation
   
   // Race condition protection: unique identifier for current image
   private currentImageId: string | null = null;
@@ -172,11 +173,14 @@ export class ImageLoader {
       const originalWidth = originalImg.width;
       const originalHeight = originalImg.height;
       
+      console.log(`[DEBUG] Image dimensions: ${originalWidth}x${originalHeight}`);
+
       // Calculate dynamic filter margin based on original image size
       const dynamicFilterMargin = Math.round(Math.max(originalWidth, originalHeight) * this.engineState.filterMarginPercent / 100);
       
       // Store original mirrored texture for final render
       this.originalMirroredDataUrl = result.originalMirroredDataUrl;
+      this.originalDataUrl = result.originalDataUrl;
       
       // Use preview-optimized mirrored texture for Live Preview performance
       const previewMirroredDataUrl = result.previewMirroredDataUrl;
@@ -263,7 +267,7 @@ export class ImageLoader {
         return {
           image,
           tiling: spec.tiling,
-          scale: spec.scale,
+          scaleMultiplier: spec.scaleMultiplier,
           scaleMode: spec.scaleMode,
           opacity: typeof spec.opacity === 'number' ? spec.opacity : 1,
           blendMode: spec.blendMode || 'source-over',
@@ -371,10 +375,12 @@ export class ImageLoader {
     this.engineState.imageWidth = this.engineState.initialSize;
     this.engineState.imageHeight = this.engineState.initialSize;
     this.engineState.mapImage = null;
+    this.engineState.layerImages = undefined; // Clear multi-layer maps
     this.engineState.currentMapLoadingUrl = null;
     
     // Clear texture data and image ID
     this.originalMirroredDataUrl = null;
+    this.originalDataUrl = null;
     this.currentImageId = null;
   }
 
@@ -397,6 +403,33 @@ export class ImageLoader {
 
   /**
    * Get original mirrored texture for final render (high quality)
+   * Creates it on demand if it was deferred during load (Lazy Generation)
+   */
+  async getOriginalMirroredTextureAsync(): Promise<string | null> {
+    // If we already have it, return it
+    if (this.originalMirroredDataUrl) {
+      return this.originalMirroredDataUrl;
+    }
+
+    // If we have the source but no mirror, generate it now
+    if (this.originalDataUrl) {
+      try {
+        const img = await this.createImageFromDataUrl(this.originalDataUrl);
+        const originalPadding = Math.round(Math.max(img.width, img.height) * this.engineState.filterMarginPercent / 100);
+        this.originalMirroredDataUrl = await createMirroredTexture(img, originalPadding);
+        return this.originalMirroredDataUrl;
+      } catch (e) {
+        console.error('Failed to generate deferred mirrored texture:', e);
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get original mirrored texture for final render (high quality)
+   * @deprecated Use getOriginalMirroredTextureAsync for reliable access to lazy-loaded textures
    */
   getOriginalMirroredTexture(): string | null {
     return this.originalMirroredDataUrl;

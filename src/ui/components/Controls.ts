@@ -1,16 +1,37 @@
 import { DisplacementEngine } from "../engine";
 import { createTooltip } from './Tooltip.js';
 import { createElement, appendChildren } from "../utils/dom";
+import { LightPositionHandle } from './LightPositionHandle';
+import type { TooltipData } from '../presets/types';
 
 // Define the public API for a slider instance.
 export interface SliderInstance {
-  setValue(newValue: number): void;
+  setValue(newValue: number, triggerCallback?: boolean): void;
   getValue(): number;
   container: HTMLElement;
   // Add batch mode support
   setBatchMode?(enabled: boolean): void;
   updateVisuals?(): void;
 }
+
+export type ControlsMap = {
+  strength: SliderInstance;
+  scale: SliderInstance;
+  soft: SliderInstance;
+  chromatic: SliderInstance;
+  blur: SliderInstance;
+  noise: SliderInstance;
+  grain: SliderInstance;
+  grainSize: SliderInstance;
+  reflectStrength: SliderInstance;
+  reflectSoft: SliderInstance;
+  reflectSharp: SliderInstance;
+  lightHandle: LightPositionHandle;
+  updateTooltips: (tooltips: TooltipData[]) => void;
+  // Batch control methods
+  setBatchMode: (enabled: boolean) => void;
+  updateAllVisuals: () => void;
+};
 
 /**
  * Creates a custom, accessible, and reliable slider component.
@@ -32,7 +53,7 @@ function createSlider(
   let pendingValue: number | null = null;
 
   // --- DOM elements ---
-  // ✅ ПОСЛЕ: Безопасное создание DOM элементов
+      // AFTER: Safe creation of DOM elements
   const trackFill = createElement('div', { className: 'track-fill' });
   const thumb = createElement('div', { className: 'thumb' });
   
@@ -50,282 +71,327 @@ function createSlider(
     
     if (isBipolar) {
       const zeroPercent = ((0 - min) / (max - min)) * 100;
-      trackFill.style.left = `${Math.min(percent, zeroPercent)}%`;
-      trackFill.style.width = `${Math.abs(percent - zeroPercent)}%`;
+      if (v >= 0) {
+        trackFill.style.left = `${zeroPercent}%`;
+        trackFill.style.width = `${percent - zeroPercent}%`;
+      } else {
+        trackFill.style.left = `${percent}%`;
+        trackFill.style.width = `${zeroPercent - percent}%`;
+      }
     } else {
-      trackFill.style.left = '0%';
       trackFill.style.width = `${percent}%`;
     }
-
-    // Update ARIA attributes
-    container.setAttribute('aria-valuenow', v.toString());
-    container.setAttribute('aria-valuetext', `${v.toFixed(step < 1 ? 1 : 0)}`);
   }
 
-  // --- Interaction Logic ---
-  let isDragging = false;
-  
-  const handleInteraction = (e: MouseEvent | TouchEvent) => {
-    e.preventDefault(); // Prevent default browser actions like text selection
-    const rect = container.getBoundingClientRect();
+  function updateValue(newValue: number, triggerCallback = true) {
+    // Constrain value
+    newValue = Math.max(min, Math.min(max, newValue));
     
-    // Prevent division by zero
-    if (rect.width <= 0) return;
-    
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    const percent = (x / rect.width);
-    
-    const rawValue = min + percent * (max - min);
-    
-    // Prevent division by zero in step calculation
-    const steppedValue = step > 0 ? Math.round(rawValue / step) * step : rawValue;
-    
-    value = Math.max(min, Math.min(max, steppedValue));
-    updateVisuals(value);
-    onValueChange(value);
-
-    // Emit HUD update during live interaction when not batching
-    if (!isInBatchMode) {
-      const labelEl = document.querySelector(`label[for="${container.id}"]`) as HTMLElement | null;
-      const labelText = labelEl ? labelEl.textContent || container.id : container.id;
-      const formatted = (step < 1 ? value.toFixed(1) : Math.round(value).toString());
-      const evt = new CustomEvent('slider:changing', {
-        detail: {
-          id: container.id,
-          label: labelText,
-          value,
-          formatted
-        }
-      });
-      document.dispatchEvent(evt);
-    }
-  };
-
-  const startDragging = (e: MouseEvent | TouchEvent) => {
-    isDragging = true;
-    container.focus();
-    // Signal drag start for HUD
-    if (!isInBatchMode) {
-      const evt = new CustomEvent('slider:drag-start', { detail: { id: container.id } });
-      document.dispatchEvent(evt);
-    }
-    handleInteraction(e); // Call once to handle initial click
-    window.addEventListener('mousemove', handleInteraction);
-    window.addEventListener('touchmove', handleInteraction);
-    window.addEventListener('mouseup', stopDragging);
-    window.addEventListener('touchend', stopDragging);
-  };
-
-  const stopDragging = () => {
-    if (!isDragging) return;
-    isDragging = false;
-
-    if (isBipolar && snapThreshold && Math.abs(value) <= snapThreshold) {
-      value = 0;
-      updateVisuals(value);
-      onValueChange(value);
-    }
-    
-    window.removeEventListener('mousemove', handleInteraction);
-    window.removeEventListener('touchmove', handleInteraction);
-    window.removeEventListener('mouseup', stopDragging);
-    window.removeEventListener('touchend', stopDragging);
-
-    // Signal drag end for HUD
-    if (!isInBatchMode) {
-      const evt = new CustomEvent('slider:drag-end', { detail: { id: container.id } });
-      document.dispatchEvent(evt);
-    }
-  };
-
-  // --- Keyboard Navigation ---
-  container.addEventListener('keydown', (e) => {
-    const keyEvent = e as KeyboardEvent;
-    let newValue = value;
-    const stepSize = step;
-    const largeStepSize = (max - min) / 10; // 10% steps for Page Up/Down
-
-    switch (keyEvent.key) {
-      case 'ArrowRight':
-      case 'ArrowUp':
-        e.preventDefault();
-        newValue = Math.min(max, value + stepSize);
-        break;
-      case 'ArrowLeft':
-      case 'ArrowDown':
-        e.preventDefault();
-        newValue = Math.max(min, value - stepSize);
-        break;
-      case 'PageUp':
-        e.preventDefault();
-        newValue = Math.min(max, value + largeStepSize);
-        break;
-      case 'PageDown':
-        e.preventDefault();
-        newValue = Math.max(min, value - largeStepSize);
-        break;
-      case 'Home':
-        e.preventDefault();
-        newValue = min;
-        break;
-      case 'End':
-        e.preventDefault();
-        newValue = max;
-        break;
-      case 'Enter':
-      case ' ':
-        e.preventDefault();
-        // Reset to zero for bipolar sliders, or middle value for regular sliders
-        newValue = isBipolar ? 0 : (min + max) / 2;
-        break;
-      default:
-        return;
+    // Snap to 0 if bipolar and within threshold
+    if (isBipolar && Math.abs(newValue) < snapThreshold) {
+      newValue = 0;
     }
 
-    if (newValue !== value) {
+    // Round to step
+    if (step > 0) {
+      newValue = Math.round(newValue / step) * step;
+    }
+    
+    // Fix floating point errors
+    newValue = parseFloat(newValue.toFixed(2));
+
+    // Only update if value changed or forced
+    if (value !== newValue) {
       value = newValue;
-      updateVisuals(value);
-      onValueChange(value);
-
-      // Emit HUD update on keyboard adjustments when not batching
-      if (!isInBatchMode) {
-        const labelEl = document.querySelector(`label[for="${container.id}"]`) as HTMLElement | null;
-        const labelText = labelEl ? labelEl.textContent || container.id : container.id;
-        const formatted = (step < 1 ? value.toFixed(1) : Math.round(value).toString());
-        const evt = new CustomEvent('slider:changing', {
-          detail: { id: container.id, label: labelText, value, formatted }
-        });
-        document.dispatchEvent(evt);
-      }
-    }
-  });
-
-  container.addEventListener('mousedown', startDragging);
-  container.addEventListener('touchstart', startDragging);
-
-  // --- Public API ---
-  const instance: SliderInstance = {
-    setValue(newValue: number) {
-      const oldValue = value;
-      value = Math.max(min, Math.min(max, newValue));
-      console.log(`🎚️ [SLIDER] setValue called on ${container.id || 'unknown'}: ${oldValue} => ${value}, batch mode: ${isInBatchMode}`);
       
+      // In batch mode, we update internal value but defer visual update
       if (isInBatchMode) {
-        // In batch mode, store the value but don't update visuals yet
+        // Visuals deferred
         pendingValue = value;
-        console.log(`🛡️ [SLIDER] Visual update deferred for ${container.id || 'unknown'}`);
+        // console.log('🛡️ [SLIDER] Visual update deferred for', container.id);
       } else {
-        // Normal mode - update visuals immediately
         updateVisuals(value);
       }
       
-      // Always update the engine state
-      console.log(`⚙️ [SLIDER] Calling onValueChange for ${container.id || 'unknown'}`);
-      onValueChange(value);
-    },
+      if (triggerCallback) {
+        onValueChange(value);
+        
+        // Dispatch event for HUD
+        const label = container.parentElement?.querySelector('label')?.textContent || '';
+        const event = new CustomEvent('slider:changing', {
+          detail: { label, formatted: value.toString() }
+        });
+        document.dispatchEvent(event);
+      }
+    }
+  }
+
+  // Initial update
+  updateVisuals(value);
+
+  // --- Interaction Handlers ---
+  let isDragging = false;
+
+  const onPointerDown = (e: PointerEvent) => {
+    isDragging = true;
+    container.classList.add('active');
+    container.setPointerCapture(e.pointerId);
+    handleMove(e);
     
-    setBatchMode(enabled: boolean) {
-      console.log(`🛡️ [SLIDER] setBatchMode ${enabled} for ${container.id || 'unknown'}`);
+    // Dispatch start event for HUD
+    document.dispatchEvent(new CustomEvent('slider:drag-start'));
+  };
+
+  const onPointerMove = (e: PointerEvent) => {
+    if (!isDragging) return;
+    handleMove(e);
+  };
+
+  const onPointerUp = (e: PointerEvent) => {
+    if (!isDragging) return;
+    isDragging = false;
+    container.classList.remove('active');
+    container.releasePointerCapture(e.pointerId);
+    
+    // Dispatch end event for HUD
+    document.dispatchEvent(new CustomEvent('slider:drag-end'));
+  };
+
+  const handleMove = (e: PointerEvent) => {
+    const rect = container.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const range = max - min;
+    const newValue = min + range * percent;
+    updateValue(newValue, true);
+  };
+
+  container.addEventListener('pointerdown', onPointerDown);
+  container.addEventListener('pointermove', onPointerMove);
+  container.addEventListener('pointerup', onPointerUp);
+  container.addEventListener('pointercancel', onPointerUp); // Handle cancellation
+
+  return {
+    setValue: (v: number, triggerCallback = true) => updateValue(v, triggerCallback), // programmatic update
+    getValue: () => value,
+    container,
+    setBatchMode: (enabled: boolean) => {
       isInBatchMode = enabled;
-      
-      // If exiting batch mode and we have a pending visual update, apply it now
       if (!enabled && pendingValue !== null) {
-        console.log(`🎨 [SLIDER] Applying deferred visual update for ${container.id || 'unknown'}: ${pendingValue}`);
         updateVisuals(pendingValue);
         pendingValue = null;
       }
     },
-    
-    updateVisuals() {
-      console.log(`🎨 [SLIDER] Manual updateVisuals called for ${container.id || 'unknown'}: ${value}`);
-      updateVisuals(value);
-    },
-    
-    getValue: () => value,
-    container,
+    updateVisuals: () => updateVisuals(value)
   };
-
-  instance.setValue(value);
-  return instance;
 }
 
 /**
- * Initializes all custom sliders and returns their instances.
+ * Initializes all sliders and connects them to the engine.
  */
-export function initControls(engine: DisplacementEngine) {
-  if (!engine) return null;
+export function initControls(engine: DisplacementEngine, tooltipsData?: TooltipData[]): ControlsMap | null {
+  // Safe selector helper
+  const getSlider = (id: string): HTMLElement | null => document.getElementById(id);
 
-  // Get all slider elements with null checks
-  const strengthEl = document.getElementById('strength');
-  const scaleEl = document.getElementById('scale');
-  const softEl = document.getElementById('soft');
-  const chromaticEl = document.getElementById('chromatic');
-  const blurEl = document.getElementById('blur');
-  const noiseEl = document.getElementById('noise');
-  const reflectOpacityEl = document.getElementById('reflect-opacity');
-  const reflectSharpnessEl = document.getElementById('reflect-sharpness');
+  // Required sliders
+  const strengthEl = getSlider('strength');
+  const scaleEl = getSlider('scale');
+  const softEl = getSlider('soft');
+  const chromaticEl = getSlider('chromatic');
+  const blurEl = getSlider('blur');
+  const noiseEl = getSlider('noise');
+  const grainEl = getSlider('grain');
+  const grainSizeEl = getSlider('grain-size');
+  const reflectStrengthEl = getSlider('reflect-strength');
+  const reflectSoftEl = getSlider('reflect-soft');
+  const reflectSharpEl = getSlider('reflect-sharp');
 
-  // Check if all required elements exist
-  if (!strengthEl || !scaleEl || !softEl || !chromaticEl || 
-      !blurEl || !noiseEl || !reflectOpacityEl || !reflectSharpnessEl) {
-    console.error('Required slider elements not found in DOM');
+  // Validate presence
+  if (!strengthEl || !scaleEl || !softEl || !chromaticEl || !blurEl || !noiseEl || !grainEl || !grainSizeEl || !reflectStrengthEl || !reflectSoftEl || !reflectSharpEl) {
+    console.error("One or more slider elements not found");
     return null;
   }
 
-  const sliders = {
-    strength: createSlider(strengthEl, (v) => engine.setStrength(v)),
-    scale: createSlider(scaleEl, (v) => engine.setScale(v)),
-    soft: createSlider(softEl, (v) => engine.setSoft(v)),
-    chromatic: createSlider(chromaticEl, (v) => engine.setChromaticAberration(v)),
-    blur: createSlider(blurEl, (v) => engine.setBlur(v)),
-    noise: createSlider(noiseEl, (v) => engine.setDissolveStrength(v)),
-    reflectOpacity: createSlider(reflectOpacityEl, (v) => engine.setReflectOpacity(v)),
-    reflectSharpness: createSlider(reflectSharpnessEl, (v) => engine.setReflectSharpness(v)),
-  };
+  // --- Create Sliders ---
   
-  // Add batch mode control methods to the sliders object
-  const slidersWithBatchControl = {
-    ...sliders,
-    setBatchMode(enabled: boolean) {
-      console.log(`🛡️ [CONTROLS] Setting batch mode: ${enabled} for all sliders`);
-      Object.values(sliders).forEach(slider => {
-        if (slider.setBatchMode) {
-          slider.setBatchMode(enabled);
-        }
-      });
-    },
-    updateAllVisuals() {
-      console.log(`🎨 [CONTROLS] Updating all slider visuals`);
-      Object.values(sliders).forEach(slider => {
-        if (slider.updateVisuals) {
-          slider.updateVisuals();
-        }
-      });
+  // Track batch mode state for triggerUpdate
+  let isControlsBatchMode = false;
+  
+  // Define a debounced trigger update helper
+  const triggerUpdate = () => {
+    // Skip triggerUpdate in batch mode - updates will be triggered manually via triggerBatchUpdate
+    if (isControlsBatchMode) {
+      return;
+    }
+    
+    // We can use engine.triggerUpdate which handles debouncing internally
+    // or relies on requestAnimationFrame.
+    // For sliders, we might want to be slightly more aggressive than
+    // standard debounce if we want smooth 60fps, but the engine handles it.
+    if (engine.triggerUpdate) {
+      engine.triggerUpdate();
     }
   };
-  
-  // Initialize tooltips
-  initTooltips();
-  
-  return slidersWithBatchControl;
-}
 
-/**
- * Initializes tooltips for all labels with data-tooltip attributes
- */
-function initTooltips() {
-  const labelsWithTooltips = document.querySelectorAll('label[data-tooltip]');
+  const strength = createSlider(strengthEl, (v) => {
+    engine.setStrength(v);
+    triggerUpdate();
+  });
+
+  const scale = createSlider(scaleEl, (v) => {
+    engine.setScale(v);
+    triggerUpdate();
+  });
+
+  const soft = createSlider(softEl, (v) => {
+    engine.setSoft(v);
+    triggerUpdate();
+  });
+
+  const chromatic = createSlider(chromaticEl, (v) => {
+    engine.setChromaticAberration(v);
+    triggerUpdate();
+  });
+
+  const blur = createSlider(blurEl, (v) => {
+    engine.setBlur(v);
+    triggerUpdate();
+  });
+
+  const noise = createSlider(noiseEl, (v) => {
+    engine.setDissolveStrength(v);
+    triggerUpdate();
+  });
+
+  const grain = createSlider(grainEl, (v) => {
+    engine.setGrain(v);
+    triggerUpdate();
+  });
+
+  const grainSize = createSlider(grainSizeEl, (v) => {
+    engine.setGrainSize(v);
+    triggerUpdate();
+  });
+
+  const reflectStrength = createSlider(reflectStrengthEl, (v) => {
+    engine.setReflectStrength(v);
+    triggerUpdate();
+  });
+
+  const reflectSoft = createSlider(reflectSoftEl, (v) => {
+    engine.setReflectSoftness(v);
+    triggerUpdate();
+  });
+
+  const reflectSharp = createSlider(reflectSharpEl, (v) => {
+    engine.setReflectSharpness(v);
+    triggerUpdate();
+  });
+
+  // --- Light Position Handle ---
+  const previewContainer = document.getElementById('preview');
+  if (!previewContainer) {
+    console.error("Preview container not found");
+    return null;
+  }
+  const lightHandle = new LightPositionHandle(previewContainer, engine);
+
+  // --- Tooltips ---
+  const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg width='200' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%232c2c2c'/%3E%3Ctext x='50%25' y='50%25' fill='%23666' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3EPreview%3C/text%3E%3C/svg%3E";
+  const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/bbssppllvv/Dispace-Figma-Plugin/main';
   
-  labelsWithTooltips.forEach((label) => {
-    const element = label as HTMLElement;
-    const tooltipContent = element.getAttribute('data-tooltip');
-    
-    if (tooltipContent) {
-      createTooltip(element, {
-        content: tooltipContent,
-        delay: 300
-      });
+  const tooltipInstances: Record<string, any> = {};
+
+  const attachTooltip = (id: string, defaultContent: string, data?: TooltipData[]) => {
+    const label = document.querySelector(`label[for="${id}"]`) as HTMLElement;
+    if (label) {
+      const customData = (data || tooltipsData)?.find(t => t.id === id);
+      const content = customData?.description || defaultContent;
+      let image = PLACEHOLDER_IMG;
+      
+      if (customData?.imageUrl) {
+        if (customData.imageUrl.startsWith('/api/tooltip/')) {
+          const fileName = customData.imageUrl.replace('/api/tooltip/', '');
+          image = `${GITHUB_RAW_BASE}/assets/tooltip-images/${fileName}`;
+        } else {
+          image = customData.imageUrl;
+        }
+      }
+      
+      if (tooltipInstances[id]) {
+        tooltipInstances[id].updateContent(content, image);
+      } else {
+        tooltipInstances[id] = createTooltip(label, { content, image });
+      }
+    }
+  };
+
+  const initAllTooltips = (data?: TooltipData[]) => {
+    attachTooltip('strength', "Distortion Intensity - Controls how much the image is displaced by the map.", data);
+    attachTooltip('scale', "Map Scale - Adjusts the size of the displacement map texture relative to the image.", data);
+    attachTooltip('soft', "Softness - Applies a blur to the displacement map itself for smoother transitions.", data);
+    attachTooltip('chromatic', "Chromatic Aberration - Separates color channels based on displacement intensity.", data);
+    attachTooltip('blur', "Blur - Blurs the final displaced image.", data);
+    attachTooltip('noise', "Dissolve Noise - Adds a noise-based dissolve effect to alpha channel.", data);
+    attachTooltip('grain', "Grain - Adds film grain noise texture to the image.", data);
+    attachTooltip('grain-size', "Grain Size - Controls the coarseness of the grain particles.", data);
+    attachTooltip('reflect-strength', "Reflect Strength - Controls the intensity of the reflection highlights.", data);
+    attachTooltip('reflect-soft', "Reflect Softness - Controls how much the light spreads over the surface.", data);
+    attachTooltip('reflect-sharp', "Reflect Sharpness - Controls how focused the reflection highlights are.", data);
+  };
+
+  initAllTooltips();
+
+  const updateTooltips = (data: TooltipData[]) => {
+    initAllTooltips(data);
+  };
+
+  // --- Interaction State Handling ---
+  // Progressive rendering optimization: lower resolution while dragging
+  document.addEventListener('slider:drag-start', () => {
+    if (engine.setInteractionState) {
+      engine.setInteractionState(true);
     }
   });
-} 
+
+  document.addEventListener('slider:drag-end', () => {
+    if (engine.setInteractionState) {
+      engine.setInteractionState(false);
+    }
+  });
+
+  // Batch control helper
+  const setBatchMode = (enabled: boolean) => {
+    isControlsBatchMode = enabled;
+    [strength, scale, soft, chromatic, blur, noise, grain, grainSize, reflectStrength, reflectSoft, reflectSharp].forEach(s => {
+      if ((s as SliderInstance).setBatchMode) (s as SliderInstance).setBatchMode!(enabled);
+    });
+  };
+
+  const updateAllVisuals = () => {
+    [strength, scale, soft, chromatic, blur, noise, grain, grainSize, reflectStrength, reflectSoft, reflectSharp].forEach(s => {
+      if ((s as SliderInstance).updateVisuals) (s as SliderInstance).updateVisuals!();
+    });
+    
+    // Also update light handle from engine state
+    const settings = engine.getCurrentEffectSettings();
+    lightHandle.setPosition(settings.reflectLightX, settings.reflectLightY);
+  };
+
+  return {
+    strength,
+    scale,
+    soft,
+    chromatic,
+    blur,
+    noise,
+    grain,
+    grainSize,
+    reflectStrength,
+    reflectSoft,
+    reflectSharp,
+    lightHandle,
+    updateTooltips,
+    setBatchMode,
+    updateAllVisuals
+  };
+}

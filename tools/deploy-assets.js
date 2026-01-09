@@ -63,12 +63,38 @@ class AssetDeployer {
 
   async scanAssets() {
     const assets = [];
-    const categories = ['displacement-maps'];
+    const categories = ['displacement-maps', 'samples'];
     
     for (const category of categories) {
       const categoryPath = path.join(this.assetsDir, category);
       
       try {
+        const stats = await fs.stat(categoryPath);
+        if (!stats.isDirectory()) continue;
+
+        // Special handling for samples (no nested type folders)
+        if (category === 'samples') {
+          const files = await fs.readdir(categoryPath);
+          for (const file of files) {
+            if (!/\.(svg|png|jpe?g)$/i.test(file)) continue;
+            
+            const filePath = path.join(categoryPath, file);
+            const fileStats = await fs.stat(filePath);
+            
+            assets.push({
+              id: path.parse(file).name,
+              name: file,
+              category,
+              type: path.extname(file).slice(1).toLowerCase(),
+              path: filePath,
+              relativePath: path.relative(this.assetsDir, filePath),
+              size: fileStats.size,
+              modified: fileStats.mtime
+            });
+          }
+          continue;
+        }
+
         const types = await fs.readdir(categoryPath);
         
         for (const type of types) {
@@ -112,9 +138,8 @@ class AssetDeployer {
         if (asset.type === 'svg') {
           // Basic SVG optimization
           optimizedContent = await this.optimizeSvg(content);
-        } else if (asset.type === 'png') {
-          // PNG optimization would go here
-          // Could integrate with imagemin or similar
+        } else if (asset.type === 'png' || asset.type === 'jpeg' || asset.type === 'jpg') {
+          // Image optimization would go here
         }
         
         // Generate hash

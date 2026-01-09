@@ -22,7 +22,7 @@
 export const APP_CONFIG = {
   // Engine settings
   INITIAL_SIZE: 512,
-  FILTER_MARGIN_PERCENT: 20,
+  FILTER_MARGIN_PERCENT: 50,
   CNV_MAX: 1024,
   CHUNK_SIZE: 0x8000,
   
@@ -55,8 +55,8 @@ export const APP_CONFIG = {
   
   // Quality and rendering settings
   QUALITY: {
-    // Image smoothing disabled for pixel-perfect displacement maps
-    IMAGE_SMOOTHING_ENABLED: false,
+    // Image smoothing enabled for smoother edges and better quality
+    IMAGE_SMOOTHING_ENABLED: true,
     
     // Enable high-DPI rendering for crisp results on retina displays
     USE_DEVICE_PIXEL_RATIO: true,
@@ -81,6 +81,19 @@ export const APP_CONFIG = {
     // Blur calculations  
     BLUR_FACTOR: 500,
     BLUR_SOFTNESS_FACTOR: 10.5,
+    
+    // Grain calculations
+    GRAIN_MIN_FREQ: 0.2,
+    GRAIN_MAX_FREQ: 2.5,
+    
+    // Reflect calculations
+    REFLECT_MAX_SPECULAR: 1.2,
+    REFLECT_MIN_BLUR: 0.2,
+    REFLECT_MAX_BLUR: 3.2,
+    REFLECT_MIN_EXPONENT: 5,
+    REFLECT_MAX_EXPONENT: 50,
+    REFLECT_SURFACE_SCALE: 1.5,
+    REFLECT_LIGHT_Z: 150,
   },
   
   // SVG export normalization values
@@ -99,13 +112,18 @@ export const APP_CONFIG = {
     chromatic: 0,
     blur: 0,
     noise: 0,
-    reflectOpacity: 0,
-    reflectSharpness: 50,
+    grain: 0,
+    grainSize: 50,
+    reflectStrength: 0,
+    reflectSoftness: 60,
+    reflectSharpness: 30,
+    reflectLightX: 0.3,
+    reflectLightY: 0.3,
   },
   
   // Preset defaults
-  DEFAULT_PRESET_STRENGTH: 50,
-  DEFAULT_PRESET_SCALE: 20,
+  DEFAULT_PRESET_STRENGTH: 150,
+  DEFAULT_PRESET_SCALE: 100,
   
   // UI settings
   ANIMATION_DURATION: 300,
@@ -157,16 +175,14 @@ export const APP_CONFIG = {
   }
 } as const;
 
-// Event names for consistency
+// Event names for consistency (legacy - some UI events still use these)
 export const EVENTS = {
-  PRESET_SELECTED: 'preset:selected',
-  MAP_SELECTED: 'map:selected', 
   EFFECT_CHANGED: 'effect:changed',
   IMAGE_SELECTED: 'image:selected',
   IMAGE_CLEARED: 'image:cleared',
 } as const;
 
-// CSS class names (для избежания опечаток)
+// CSS class names (to avoid typos)
 export const CSS_CLASSES = {
   PRESET_ITEM: 'preset-item',
   CUSTOM_PRESET: 'custom-preset',

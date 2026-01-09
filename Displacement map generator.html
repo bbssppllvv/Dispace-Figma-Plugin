@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Normal / Displacement Map Generator</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: system-ui, sans-serif;
+      padding: 20px;
+      display: flex;
+      gap: 40px;
+    }
+
+    .panel {
+      width: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    label {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    canvas {
+      background: #222;
+      border-radius: 10px;
+      width: 350px;
+      height: 350px;
+      image-rendering: crisp-edges;
+    }
+
+    .result {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .export {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .export label {
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    .export select {
+      background: #222;
+      color: #fff;
+      border-radius: 6px;
+      border: 1px solid #444;
+      padding: 4px 8px;
+      font-size: 13px;
+    }
+
+    .export button {
+      background: #fff;
+      color: #111;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .export button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div>
+      <label>Smoothing</label>
+      <input id="smooth" type="range" min="0" max="1" step="0.01" value="0.4" />
+    </div>
+    <div>
+      <label>Radius</label>
+      <input id="radius" type="range" min="0.1" max="0.9" step="0.01" value="0.55" />
+    </div>
+    <div>
+      <label>Bezel</label>
+      <input id="bezel" type="range" min="0" max="2" step="0.01" value="1" />
+    </div>
+    <div>
+      <label>Curve</label>
+      <input id="curve" type="range" min="1" max="6" step="0.1" value="2.5" />
+    </div>
+    <div>
+      <label>Noise</label>
+      <input id="noise" type="range" min="0" max="1" step="0.01" value="0.2" />
+    </div>
+    <div>
+      <label>Displacement Strength</label>
+      <input id="strength" type="range" min="5" max="150" step="1" value="60" />
+    </div>
+
+    <div class="export">
+      <label for="exportSize">Export size</label>
+      <select id="exportSize">
+        <option value="512">512 × 512</option>
+        <option value="1024" selected>1024 × 1024</option>
+        <option value="2048">2048 × 2048</option>
+      </select>
+      <button id="savePng">Save PNG</button>
+    </div>
+  </div>
+
+  <div class="result">
+    <canvas id="normal" width="350" height="350"></canvas>
+    <canvas id="preview" width="350" height="350"></canvas>
+  </div>
+
+  <script>
+    const normCanvas = document.getElementById("normal");
+    const preview = document.getElementById("preview");
+
+    const nctx = normCanvas.getContext("2d", { willReadFrequently: true });
+    const pctx = preview.getContext("2d", { willReadFrequently: true });
+
+    const W = 350;
+    const H = 350;
+
+    let offsetY = 0;
+    const scrollSpeed = 0.4;
+    const tileSize = 20;
+
+    const sliders = {
+      smooth: document.getElementById("smooth"),
+      radius: document.getElementById("radius"),
+      bezel: document.getElementById("bezel"),
+      curve: document.getElementById("curve"),
+      noise: document.getElementById("noise"),
+      strength: document.getElementById("strength")
+    };
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    // Fine grain noise for preview
+    const noise = new Float32Array(W * H);
+    for (let i = 0; i < noise.length; i++) {
+      noise[i] = Math.random() - 0.5;
+    }
+
+    let normalImg = nctx.createImageData(W, H);
+    let N = normalImg.data;
+
+    function rebuildNormalMap() {
+      const SM = +sliders.smooth.value;
+      const R = (W / 2) * +sliders.radius.value;
+      const BZ = +sliders.bezel.value;
+      const CV = +sliders.curve.value;
+      const NS = +sliders.noise.value;
+
+      const cx = W / 2;
+      const cy = H / 2;
+
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const pos = y * W + x;
+          const i = pos * 4;
+
+          const dx = x - cx;
+          const dy = y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist > R) {
+            N[i] = 128;
+            N[i + 1] = 128;
+            N[i + 2] = 255;
+            N[i + 3] = 255;
+            continue;
+          }
+
+          let nx = dx / R;
+          let ny = dy / R;
+
+          let k = 1 - dist / R;
+          k = Math.pow(k, CV);
+
+          const edge = 1 + BZ * (1 - k);
+          nx *= edge;
+          ny *= edge;
+
+          let nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+
+          nx = lerp(nx, 0, SM);
+          ny = lerp(ny, 0, SM);
+          nz = lerp(nz, 1, SM);
+
+          if (NS > 0) {
+            const g = noise[pos] * NS * 0.25;
+            nx += g;
+            ny += g * 0.65;
+          }
+
+          N[i] = (nx * 0.5 + 0.5) * 255;
+          N[i + 1] = (ny * 0.5 + 0.5) * 255;
+          N[i + 2] = (nz * 0.5 + 0.5) * 255;
+          N[i + 3] = 255;
+        }
+      }
+
+      nctx.putImageData(normalImg, 0, 0);
+    }
+
+    const outImg = pctx.createImageData(W, H);
+    const O = outImg.data;
+
+    function renderFrame() {
+      offsetY = (offsetY + scrollSpeed) % (tileSize * 2);
+
+      const strength = +sliders.strength.value;
+
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const pos = y * W + x;
+          const o = pos * 4;
+
+          const nx = (N[o] / 255 - 0.5) * 2;
+          const ny = (N[o + 1] / 255 - 0.5) * 2;
+
+          const sx = x + nx * strength;
+          const sy = y + ny * strength;
+
+          if (sx < 0 || sy < 0 || sx >= W || sy >= H) {
+            O[o] = O[o + 1] = O[o + 2] = 0;
+            O[o + 3] = 255;
+            continue;
+          }
+
+          const wx = sx;
+          const wy = sy + offsetY;
+
+          const gx = Math.floor(wx / tileSize) % 2;
+          const gy = Math.floor(wy / tileSize) % 2;
+          const dark = (gx + gy) % 2 === 0;
+
+          const col = dark ? 0x77 : 0x33;
+
+          O[o] = O[o + 1] = O[o + 2] = col;
+          O[o + 3] = 255;
+        }
+      }
+
+      pctx.putImageData(outImg, 0, 0);
+    }
+
+    function loop() {
+      renderFrame();
+      requestAnimationFrame(loop);
+    }
+
+    Object.values(sliders).forEach((sl) => {
+      if (sl === sliders.strength) return;
+      sl.addEventListener("input", rebuildNormalMap);
+    });
+
+    rebuildNormalMap();
+    loop();
+
+    // EXPORT LOGIC
+    const exportSizeSelect = document.getElementById("exportSize");
+    const saveBtn = document.getElementById("savePng");
+
+    function exportNormalMap(size) {
+      // Генерируем в увеличенном разрешении для качественного сглаживания
+      // Используем больший коэффициент для лучшего антиалиазинга
+      const scaleFactor = size <= 512 ? 6 : size <= 1024 ? 4 : 3;
+      const renderSize = size * scaleFactor;
+      
+      // Зона плавного перехода на краях (в пикселях высокого разрешения)
+      const featherSize = Math.max(2, scaleFactor * 1.5);
+
+      // Создаем временный canvas для рендеринга в высоком разрешении
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = renderSize;
+      tempCanvas.height = renderSize;
+      const tempCtx = tempCanvas.getContext("2d");
+
+      const imgData = tempCtx.createImageData(renderSize, renderSize);
+      const data = imgData.data;
+
+      const SM = +sliders.smooth.value;
+      const R_REL = +sliders.radius.value;
+      const BZ = +sliders.bezel.value;
+      const CV = +sliders.curve.value;
+      const NS = +sliders.noise.value;
+
+      const cx = renderSize / 2;
+      const cy = renderSize / 2;
+      const R = (renderSize / 2) * R_REL;
+
+      // Генерируем шум в высоком разрешении для лучшего качества
+      const localNoise = new Float32Array(renderSize * renderSize);
+      for (let i = 0; i < localNoise.length; i++) {
+        localNoise[i] = Math.random() - 0.5;
+      }
+
+      // Рендерим нормальную карту в высоком разрешении с плавными краями
+      for (let y = 0; y < renderSize; y++) {
+        for (let x = 0; x < renderSize; x++) {
+          const pos = y * renderSize + x;
+          const i = pos * 4;
+
+          const dx = x - cx;
+          const dy = y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          // Плавный переход на краях
+          const distFromEdge = dist - R;
+          let edgeAlpha = 1.0;
+          
+          if (distFromEdge > 0) {
+            // За пределами радиуса - плавно переходим к плоской нормали
+            if (distFromEdge < featherSize) {
+              edgeAlpha = 1.0 - (distFromEdge / featherSize);
+              edgeAlpha = Math.pow(edgeAlpha, 0.7); // Более плавный переход
+            } else {
+              // Полностью плоская нормаль
+              data[i] = 128;
+              data[i + 1] = 128;
+              data[i + 2] = 255;
+              data[i + 3] = 255;
+              continue;
+            }
+          }
+
+          let nx = dx / R;
+          let ny = dy / R;
+
+          let k = 1 - dist / R;
+          k = Math.pow(k, CV);
+
+          const edge = 1 + BZ * (1 - k);
+          nx *= edge;
+          ny *= edge;
+
+          let nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+
+          nx = lerp(nx, 0, SM);
+          ny = lerp(ny, 0, SM);
+          nz = lerp(nz, 1, SM);
+
+          if (NS > 0) {
+            const g = localNoise[pos] * NS * 0.25;
+            nx += g;
+            ny += g * 0.65;
+          }
+
+          // Плавно смешиваем с плоской нормалью на краях
+          const flatNx = 0;
+          const flatNy = 0;
+          const flatNz = 1;
+
+          nx = lerp(flatNx, nx, edgeAlpha);
+          ny = lerp(flatNy, ny, edgeAlpha);
+          nz = lerp(flatNz, nz, edgeAlpha);
+
+          data[i] = (nx * 0.5 + 0.5) * 255;
+          data[i + 1] = (ny * 0.5 + 0.5) * 255;
+          data[i + 2] = (nz * 0.5 + 0.5) * 255;
+          data[i + 3] = 255;
+        }
+      }
+
+      tempCtx.putImageData(imgData, 0, 0);
+
+      // Применяем легкое размытие для дополнительного сглаживания
+      const blurCanvas = document.createElement("canvas");
+      blurCanvas.width = renderSize;
+      blurCanvas.height = renderSize;
+      const blurCtx = blurCanvas.getContext("2d");
+      blurCtx.imageSmoothingEnabled = true;
+      blurCtx.imageSmoothingQuality = "high";
+      
+      // Легкое размытие через масштабирование
+      blurCtx.drawImage(tempCanvas, 0, 0, renderSize * 0.98, renderSize * 0.98);
+      blurCtx.drawImage(blurCanvas, 0, 0, renderSize, renderSize);
+
+      // Создаем финальный canvas с целевым размером
+      const finalCanvas = document.createElement("canvas");
+      finalCanvas.width = size;
+      finalCanvas.height = size;
+      const finalCtx = finalCanvas.getContext("2d");
+
+      // Включаем высококачественное сглаживание для уменьшения
+      finalCtx.imageSmoothingEnabled = true;
+      finalCtx.imageSmoothingQuality = "high";
+
+      // Уменьшаем изображение с антиалиазингом
+      finalCtx.drawImage(blurCanvas, 0, 0, size, size);
+
+      const url = finalCanvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `normalmap_${size}x${size}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener("click", () => {
+        const size = parseInt(exportSizeSelect.value, 10) || 1024;
+        exportNormalMap(size);
+      });
+    }
+  </script>
+</body>
+</html>

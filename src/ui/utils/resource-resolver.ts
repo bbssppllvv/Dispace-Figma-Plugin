@@ -22,9 +22,8 @@ export async function resolveResourceUrl(src: string): Promise<string> {
     try {
       return await resourceManager.loadResource(src.replace('resource://', ''));
     } catch (error) {
-      console.error('Failed to resolve resource:', src, error);
-      
-      // Fallback to a neutral gray texture
+      // ResourceManager now returns fallback instead of throwing,
+      // but keep this as safety net
       return createFallbackTexture();
     }
   }

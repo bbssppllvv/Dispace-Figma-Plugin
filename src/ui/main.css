@@ -8,15 +8,15 @@
 }
 
 /* Disabled thumbnail overlay (reuses skeleton element as a static mask) */
+.preset-item[data-disabled="1"] {
+  opacity: 1;
+  cursor: default;
+}
+
 .preset-item[data-disabled="1"] .thumb-skeleton {
   opacity: 1 !important;
   background-image: none !important;
-  background-color: var(--color-disabled-bg) !important;
-}
-
-.preset-item[data-disabled="1"] {
-  opacity: 0.5;
-  cursor: default;
+  background-color: var(--color-bg-secondary) !important;
 }
 
 html, body, #root {
@@ -61,26 +61,26 @@ html, body, #root {
   --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-family-mono: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   
-  /* Font Sizes - 6 размеров */
-  --font-size-xxs: 8px;     /* Ultra small - PRO badges, очень мелкие элементы */
-  --font-size-xs: 10px;      /* Badges (жирные), мелкие заметки */
-  --font-size-sm: 11px;      /* Кнопки, табы, лейблы слайдеров, заголовки групп */  
-  --font-size-base: 13px;    /* Основной текст */
-  --font-size-md: 14px;      /* Подзаголовки, навигация */
-  --font-size-lg: 18px;      /* Заголовки модалок */
+  /* Font Sizes - 6 sizes */
+  --font-size-xxs: 8px;     /* Ultra small - PRO badges, very small elements */
+  --font-size-xs: 10px;      /* Badges (bold), small notes */
+  --font-size-sm: 11px;      /* Buttons, tabs, slider labels, group headers */  
+  --font-size-base: 13px;    /* Main text */
+  --font-size-md: 14px;      /* Subheaders, navigation */
+  --font-size-lg: 18px;      /* Modal headers */
   --font-size-xl: 20px;      /* H1 for empty state (display) */
   
-  /* Line Height - 1 вариант для всего */
-  --line-height: 1.4;        /* Универсальная высота строки */
+  /* Line Height - 1 variant for all */
+  --line-height: 1.4;        /* Universal line height */
   
-  /* Font Weights - 2 основных + 1 для больших заголовков */
-  --font-weight-normal: 400;   /* Обычный текст */
-  --font-weight-medium: 500;   /* Акценты, кнопки, активные элементы */
-  --font-weight-bold: 600;     /* Только для больших заголовков */
+  /* Font Weights - 2 main + 1 for large headers */
+  --font-weight-normal: 400;   /* Normal text */
+  --font-weight-medium: 500;   /* Accents, buttons, active elements */
+  --font-weight-bold: 600;     /* Only for large headers */
   
   /* Letter Spacing */
-  --letter-spacing-tight: -0.03em;  /* -3% для больших заголовков */
-  --letter-spacing-xtra-tight: -0.04em; /* -4% для H1 в пустом состоянии */
+  --letter-spacing-tight: -0.03em;  /* -3% for large headers */
+  --letter-spacing-xtra-tight: -0.04em; /* -4% for H1 in empty state */
   
   /* Spacing & Layout */
   --space-small: 8px;
@@ -166,7 +166,7 @@ body {
    TYPOGRAPHY CLASSES
    ================================= */
 
-/* Размеры шрифтов */
+/* Font sizes */
 .text-xs {
   font-size: var(--font-size-xs);
   line-height: var(--line-height);
@@ -192,7 +192,7 @@ body {
   line-height: var(--line-height);
 }
 
-/* Веса шрифтов */
+/* Font weights */
 .font-normal {
   font-weight: var(--font-weight-normal);
 }
@@ -201,12 +201,12 @@ body {
   font-weight: var(--font-weight-medium);
 }
 
-/* Семейства шрифтов */
+/* Font families */
 .font-mono {
   font-family: var(--font-family-mono);
 }
 
-/* Цвета текста */
+/* Text colors */
 .text-primary {
   color: var(--color-text);
 }
@@ -260,7 +260,7 @@ body {
   text-transform: capitalize;
 }
 
-/* Семантические классы */
+/* Semantic classes */
 .text-heading {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
@@ -513,6 +513,7 @@ button:focus:not(:focus-visible),
 #presetGridContainer {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  cursor: grab;
 }
 
 /* Keep thin scrollbars for other elements */
@@ -777,8 +778,8 @@ label[data-tooltip]:hover {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -787,16 +788,17 @@ label[data-tooltip]:hover {
   justify-content: center;
   cursor: pointer;
   z-index: 1000;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
   color: var(--color-text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* При hover на wrapper - легкий hover эффект стрелок */
+/* On wrapper hover - light arrow hover effect */
 .preset-gallery-wrapper:hover .preset-nav-arrow {
   background-color: var(--color-button-secondary-hover);
 }
 
-/* При hover на конкретную стрелку - более яркий эффект */
+/* On specific arrow hover - brighter effect */
 .preset-nav-arrow:hover {
   background-color: var(--color-selected) !important;
 }
@@ -836,12 +838,12 @@ label[data-tooltip]:hover {
 /* Preset grid - 3 rows, flow horizontally */
 .preset-category-grid {
   display: grid;
-  grid-template-rows: repeat(2, 1fr); /* 2 строки: больше плитки, та же суммарная высота */
+  grid-template-rows: repeat(2, 1fr); /* 2 rows: more tiles, same total height */
   grid-auto-flow: column;
   gap: 4px;
   width: max-content;
-  padding: 2px 8px 8px 8px; /* Уменьшенный отступ сверху, отступы по бокам и снизу для кнопок удаления */
-  position: relative; /* Создаем stacking context */
+  padding: 2px 8px 8px 8px; /* Reduced top padding, side and bottom padding for delete buttons */
+  position: relative; /* Create stacking context */
 }
 
 /* Preset items - more compact */
@@ -874,12 +876,12 @@ label[data-tooltip]:hover {
   user-select: none;
 }
 
-/* Custom preset items - без overflow hidden для кнопки удаления */
+/* Custom preset items - no overflow hidden for delete button */
 .preset-item.custom-preset {
   overflow: visible;
 }
 
-/* Обеспечиваем правильное скругление изображений во всех типах пресетов */
+/* Ensure correct image rounding in all preset types */
 .preset-item img,
 .preset-item.custom-preset img {
   border-radius: var(--radius-medium);
@@ -890,7 +892,7 @@ label[data-tooltip]:hover {
   border-radius: var(--radius-medium);
 }
 
-/* Анимированное появление ring через изменение толщины stroke */
+/* Animated ring appearance via stroke width change */
 .selection-ring.ring-transparent {
   box-shadow: inset 0 0 0 0px var(--color-text);
 }
@@ -899,13 +901,13 @@ label[data-tooltip]:hover {
   box-shadow: inset 0 0 0 2px var(--color-text);
 }
 
-/* Убираем стандартные ring стили когда используем кастомные */
+/* Remove standard ring styles when using custom ones */
 .selection-ring.ring-transparent.ring-2,
 .selection-ring.ring-black.ring-2 {
   --tw-ring-width: 0px;
 }
 
-/* Кастомные пресеты при hover должны быть еще выше для кнопки удаления */
+/* Custom presets on hover must be higher for delete button */
 .preset-item.custom-preset:hover {
   z-index: 200;
 }
@@ -932,19 +934,19 @@ label[data-tooltip]:hover {
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s ease;
-  z-index: 1000; /* Еще выше чем любой preset */
+  z-index: 1000; /* Higher than any preset */
 }
 
 .preset-item:hover .delete-btn {
   opacity: 1;
   transform: translate(50%, -50%) scale(1.1);
-  z-index: 1000; /* Сохраняем максимальный z-index */
+  z-index: 1000; /* Keep max z-index */
 }
 
 .preset-item .delete-btn:hover {
   background-color: var(--color-danger);
   border-color: var(--color-danger);
-  z-index: 1001; /* При hover на саму кнопку - самый высокий приоритет */
+  z-index: 1001; /* On button hover - highest priority */
 } 
 
 /* Tooltip */
@@ -965,6 +967,30 @@ label[data-tooltip]:hover {
   transform: translateY(2px);
   transition: opacity 0.15s ease, transform 0.15s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  /* Ensure tooltip is on top */
+  z-index: 9999; 
+}
+
+.tooltip-image-container {
+  margin-bottom: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  /* Set min dimensions to prevent layout shift/bad initial positioning */
+  min-width: 200px;
+  min-height: 120px; 
+}
+
+.tooltip-image {
+  display: block;
+  max-width: 200px;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.tooltip-content {
+  max-width: 200px;
 }
 
 .tooltip-visible {
@@ -1021,20 +1047,58 @@ label[data-tooltip]:hover {
 }
 
 .modal-panel-left {
-  flex: 0.8;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg-secondary);
-  border-right: 1px solid var(--color-border);
-}
-
-.modal-panel-right {
-  flex: 1.2;
+  width: 400px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   background: var(--color-bg-preview);
   position: relative;
+  border-right: 1px solid var(--color-border);
+}
+
+.modal-panel-right {
+  width: 320px;
+  padding: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-secondary);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar in right panel */
+.modal-panel-right::-webkit-scrollbar {
+  display: none;
+}
+
+/* Code container */
+.modal-code-container {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Better scrollbar styling for code textarea in modals */
+.modal-code-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-code-textarea::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+.modal-code-textarea::-webkit-scrollbar-thumb {
+  background: var(--color-text-secondary);
+  border-radius: 3px;
+  opacity: 0.6;
+}
+
+.modal-code-textarea::-webkit-scrollbar-thumb:hover {
+  opacity: 1;
 }
 
 /* HUD overlay message */
@@ -1051,9 +1115,97 @@ label[data-tooltip]:hover {
   display: none !important;
 } 
 
+/* TODO: Future Reflect Effect styles will go here */
+
+/* Toggle Switch */
+.toggle-switch {
+  appearance: none;
+  width: 28px;
+  height: 16px;
+  background-color: var(--color-border-strong);
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.toggle-switch:checked {
+  background-color: var(--color-text);
+}
+
+.toggle-switch::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch:checked::before {
+  transform: translateX(12px);
+}
+
+/* Sample images in empty state */
+.sample-image-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  background-color: var(--color-bg-secondary);
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sample-image-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.sample-image-btn:active {
+  transform: translateY(0);
+}
+
+.sample-image-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* Ensure live preview scales with nearest-neighbor to match final render */
+#preview {
+  background-color: var(--color-bg-preview);
+  overflow: hidden;
+}
+
+#preview svg {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background-color: transparent;
+}
+
+#preview.has-image svg {
+  opacity: 1;
+}
+
 #preview,
 #preview svg {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+  image-rendering: auto;
+  /* Ensure crisp rendering on high-DPI displays */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#preview svg {
+  /* Ensure SVG renders crisply on Retina displays */
+  shape-rendering: geometricPrecision;
 }

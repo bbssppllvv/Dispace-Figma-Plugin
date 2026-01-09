@@ -18,7 +18,7 @@
  * - Configurable quality settings via APP_CONFIG.QUALITY
  * - Size limiting to prevent Figma "Image is too large" errors
  * 
- * The renderer synchronizes with the reflect effect system and uses optimized drawing
+ * The renderer uses optimized drawing techniques and includes hooks for future effects
  * techniques to maintain 60fps performance even with complex displacement operations.
  * 
  * @module FilterRenderer
@@ -27,7 +27,6 @@
 import { APP_CONFIG } from '../config/constants';
 import { debounce } from '../utils/debounce';
 import type { SVGElements, EngineState, CanvasResources, ObjectPool } from './types';
-import type { ReflectEffect } from '../components/ReflectEffect';
 import type { ImageLoader } from './ImageLoader';
 
 /**
@@ -128,14 +127,10 @@ export class FilterRenderer {
   
   // Batch rendering control
   private isBatchMode = false;
+
+  // Interaction state for progressive rendering
+  private isInteracting = false;
   
-  // Store texture data for batch update of ReflectEffect
-  private pendingReflectTextureUpdate: {textureDataUrl: string, width: number, height: number} | null = null;
-  
-  // Flag to defer ReflectEffect texture update during current redrawMap call (unused removed)
-  
-  // Flag to indicate if next redrawMap should defer ReflectEffect (for debounced calls)
-  private deferReflectForNextRedraw = false;
   
   // Performance optimization: cache expensive calculations
   private cachedBaseScale: number = 1;
@@ -148,10 +143,14 @@ export class FilterRenderer {
   // Guard against race conditions from async canvas.toBlob callbacks
   private renderGeneration: number = 0;
   
+  // Flag to prevent updates during export
+  private isExporting = false;
+  private pendingUpdateDuringExport = false;
+  
   constructor(
     private svgElements: SVGElements,
     private engineState: EngineState,
-    private reflectEffect: ReflectEffect | null,
+    _reflectEffect: unknown, // Placeholder for future implementation
     private imageLoader: ImageLoader | null,  // Added for original texture access
     updateCallback: () => void
   ) {
@@ -162,17 +161,26 @@ export class FilterRenderer {
   private initializeCanvasResources(): CanvasResources {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-    ctx.imageSmoothingEnabled = APP_CONFIG.QUALITY.IMAGE_SMOOTHING_ENABLED; // Use constant for consistency
+    ctx.imageSmoothingEnabled = APP_CONFIG.QUALITY.IMAGE_SMOOTHING_ENABLED;
+    if (ctx.imageSmoothingEnabled) {
+      (ctx as any).imageSmoothingQuality = 'high';
+    }
     
     // Reusable temp canvas for blur operations to prevent memory leaks
     const tempCanvas = document.createElement("canvas");
     const tempCtx = tempCanvas.getContext("2d")!;
     tempCtx.imageSmoothingEnabled = APP_CONFIG.QUALITY.IMAGE_SMOOTHING_ENABLED;
+    if (tempCtx.imageSmoothingEnabled) {
+      (tempCtx as any).imageSmoothingQuality = 'high';
+    }
     
     // Reusable render canvas for getImageBytes optimization
     const renderCanvas = document.createElement("canvas");
     const renderCtx = renderCanvas.getContext("2d")!;
     renderCtx.imageSmoothingEnabled = APP_CONFIG.QUALITY.IMAGE_SMOOTHING_ENABLED;
+    if (renderCtx.imageSmoothingEnabled) {
+      (renderCtx as any).imageSmoothingQuality = 'high';
+    }
 
     // Initialize object pool for performance optimization
     const objectPool = APP_CONFIG.PERFORMANCE.ENABLE_OBJECT_POOLING ? new RenderObjectPool() : undefined;
@@ -308,57 +316,97 @@ export class FilterRenderer {
   }
 
   /**
+   * Sets interaction state to enable/disable progressive rendering optimization
+   */
+  setInteractionState(active: boolean): void {
+    this.isInteracting = active;
+  }
+
+  /**
    * Redraws the displacement map with current settings (OPTIMIZED)
    */
   redrawMap(softValue: number): void {
-    console.log('🖼️ [RENDERER] redrawMap called with softValue:', softValue, 'mapImage exists:', !!this.engineState.mapImage);
-    
-    // In Multilayer mode we may not rely on mapImage; allow layerImages path to run
-    if (!this.engineState.mapImage && !(this.engineState.layerImages && this.engineState.layerImages.length > 0)) {
-      console.log('🚫 [RENDERER] No map image or layers, skipping redrawMap');
+    // Block updates during export to prevent race conditions
+    if (this.isExporting) {
+      this.pendingUpdateDuringExport = true;
       return;
     }
 
+    // In Multilayer mode we may not rely on mapImage; allow layerImages path to run
+    // We also proceed if NO map is present, to ensure feImg dimensions are updated to match the viewBox.
+    // This prevents "corner" artifacts where the previous map texture (with small dimensions) 
+    // is applied to a new large image before the new map loads.
+    const hasMap = !!this.engineState.mapImage || (!!this.engineState.layerImages && this.engineState.layerImages.length > 0);
+    
     // Increment render generation to invalidate older async callbacks
     const myGeneration = ++this.renderGeneration;
 
     const { svg } = this.svgElements;
     const { canvas, ctx } = this.canvasResources;
-    const { mapImage, scalePct } = this.engineState;
-
-    console.log('🎨 [RENDERER] Starting actual redraw - this WILL cause visual update');
+    const { mapImage, scalePct, textureScale } = this.engineState;
     
     const vb = svg.viewBox.baseVal;
 
     // Use a per-engine down-scaled version for performance (keep feImage sized to viewBox).
     // ratio must be consistently applied in BOTH single-map and multi-layer paths
-    const ratio = Math.min(1, this.engineState.previewMax / Math.max(vb.width, vb.height));
-
-    const cnvW = Math.max(1, Math.round(vb.width * ratio));
-    const cnvH = Math.max(1, Math.round(vb.height * ratio));
+    const maxRatio = Math.min(1, this.engineState.previewMax / Math.max(vb.width, vb.height));
+    
+    // PROGRESSIVE RENDERING:
+    // Instead of resizing the canvas (which clears it and causes flickering),
+    // we always keep the canvas at the "high quality" size (maxRatio).
+    // During interaction, we can optionally simplify what we draw, but we DON'T change canvas dimensions.
+    
+    // Calculate base canvas dimensions
+    const baseCnvW = Math.max(1, Math.round(vb.width * maxRatio));
+    const baseCnvH = Math.max(1, Math.round(vb.height * maxRatio));
+    
+    // Apply devicePixelRatio for Retina/high-DPI displays if enabled
+    let dpr = 1;
+    if (APP_CONFIG.QUALITY.USE_DEVICE_PIXEL_RATIO && typeof window !== 'undefined' && window.devicePixelRatio) {
+      dpr = Math.max(
+        APP_CONFIG.QUALITY.DPR_MIN_BOUND,
+        Math.min(APP_CONFIG.QUALITY.DPR_MAX_BOUND, window.devicePixelRatio)
+      );
+    }
+    
+    const cnvW = Math.max(1, Math.round(baseCnvW * dpr));
+    const cnvH = Math.max(1, Math.round(baseCnvH * dpr));
+    
+    // Only resize if dimensions actually changed (e.g. image load), not for progressive downscaling
     if (canvas.width !== cnvW || canvas.height !== cnvH) {
       canvas.width = cnvW;
       canvas.height = cnvH;
     }
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Reset transform accounting for DPR scaling (always set, even if DPR=1, to ensure clean state)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, baseCnvW, baseCnvH);
+
+    // Effective ratio for drawing calculations
+    // If interacting, we could logically simulate lower res, but since we kept canvas large,
+    // we just draw at full resolution. The bottleneck was likely the resize-thrashing.
+    // If performance is still an issue, we can skip some heavy operations here.
+    const drawRatio = maxRatio;
 
     // Use cached base scale instead of recalculating Math.max every time
-    const scaleForPreview = (scalePct * 0.01) * ratio * this.cachedBaseScale; // 0.01 instead of /100
+    const scaleForPreview = (scalePct * textureScale * 0.01) * drawRatio * this.cachedBaseScale; // 0.01 instead of /100
 
     // Unified path: always use layerImages if present (single or multiple)
+    // Use base dimensions for drawing (DPR scaling is handled by transform)
     if (this.engineState.layerImages && this.engineState.layerImages.length > 0) {
       // Clear once before stacking layers
-      // canvas уже очищен выше
+      // canvas is already cleared above
       for (const layer of this.engineState.layerImages) {
+        // scaleMultiplier modifies how fast this layer responds to global scale slider
+        const layerMultiplier = layer.scaleMultiplier ?? 1.0;
         this.drawLayer(
           ctx,
-          canvas.width,
-          canvas.height,
+          baseCnvW,
+          baseCnvH,
           layer.image,
           layer.tiling,
           // Apply ratio to percent scale so thumbnails (with smaller cnv) match Live Preview
-          (typeof layer.scale === 'number' ? layer.scale : this.engineState.scalePct) * ratio,
+          (this.engineState.scalePct * textureScale * layerMultiplier) * drawRatio,
           layer.scaleMode || 'uniform',
           layer.opacity,
           layer.blendMode,
@@ -371,7 +419,7 @@ export class FilterRenderer {
     } else {
       // Fallback for extreme edge cases: no layers were set
       if (mapImage) {
-        this.drawTiledMap(ctx, canvas.width, canvas.height, mapImage, (this.engineState.scalePct * 0.01) * ratio * this.cachedBaseScale);
+        this.drawTiledMap(ctx, baseCnvW, baseCnvH, mapImage, (this.engineState.scalePct * textureScale * 0.01) * drawRatio * this.cachedBaseScale);
       }
     }
 
@@ -379,29 +427,24 @@ export class FilterRenderer {
 
     // Prefer Blob URLs to reduce memory churn; fallback to dataURL if needed
     const applyTextureUrl = (url: string) => {
-      console.log('🎨 [RENDERER] Setting feImg href - VISUAL UPDATE HAPPENING NOW');
       this.svgElements.feImg.setAttribute("href", url);
       // Ensure feImg matches the SVG viewBox so preview and apply share the same coordinate system
       this.svgElements.feImg.setAttribute("width", String(vb.width));
       this.svgElements.feImg.setAttribute("height", String(vb.height));
-
-      if (this.reflectEffect) {
-        console.log('🪞 [RENDERER] Updating reflect effect texture');
-        if (this.deferReflectForNextRedraw || this.pendingReflectTextureUpdate) {
-          console.log('🛡️ [RENDERER] Deferring ReflectEffect texture update for batch (deferred flag:', this.deferReflectForNextRedraw, 'pending update:', !!this.pendingReflectTextureUpdate, ')');
-          this.pendingReflectTextureUpdate = { textureDataUrl: url, width: vb.width, height: vb.height };
-          this.deferReflectForNextRedraw = false;
-        } else {
-          console.log('🪞 [RENDERER] Immediate ReflectEffect texture update');
-          this.reflectEffect.updateTexture(url, vb.width, vb.height);
-        }
-      }
-      console.log('✅ [RENDERER] redrawMap completed - visual update finished');
     };
 
-    // Force synchronous dataURL path to avoid races across browsers/throttle
+    // CHANGED: Use toDataURL (sync) for instant Live Preview updates
+    // The previous async toBlob caused a noticeable delay between slider movement and visual update.
+    // While sync operations can block the main thread, for the preview size (usually < 1000px),
+    // modern JS engines handle this fast enough to perceive as "instant".
+    
+    // Revoke previous URL if it existed to clean up any lingering ObjectURLs
+    if (this.lastTextureObjectUrl) {
+      URL.revokeObjectURL(this.lastTextureObjectUrl);
+      this.lastTextureObjectUrl = null;
+    }
+    
     const dataUrl = canvas.toDataURL('image/png');
-    if (myGeneration !== this.renderGeneration) return;
     applyTextureUrl(dataUrl);
   }
 
@@ -409,15 +452,17 @@ export class FilterRenderer {
    * Triggers debounced update
    */
   triggerUpdate(): void {
-    console.log('🎨 [RENDERER] triggerUpdate called - batch mode:', this.isBatchMode);
-    
     // Skip updates during batch mode
     if (this.isBatchMode) {
-      console.log('🛡️ [RENDERER] Update skipped due to batch mode');
       return;
     }
     
-    console.log('⚡ [RENDERER] Triggering debounced update');
+    // Defer updates during export
+    if (this.isExporting) {
+      this.pendingUpdateDuringExport = true;
+      return;
+    }
+    
     this.debouncedUpdate();
   }
 
@@ -425,44 +470,20 @@ export class FilterRenderer {
    * Sets batch mode state - when enabled, updates are deferred
    */
   setBatchMode(enabled: boolean): void {
-    const previousState = this.isBatchMode;
     this.isBatchMode = enabled;
-    console.log('🛡️ [RENDERER] setBatchMode:', previousState, '=>', enabled);
-    
-    // When enabling batch mode, mark that next redraw should defer ReflectEffect
-    if (enabled) {
-      this.deferReflectForNextRedraw = true;
-      console.log('🛡️ [RENDERER] Set deferReflectForNextRedraw for upcoming redraw');
-    }
-    
-    // Also set batch mode for ReflectEffect
-    if (this.reflectEffect) {
-      console.log('🛡️ [RENDERER] Setting batch mode for ReflectEffect:', enabled);
-      this.reflectEffect.setBatchMode(enabled);
-    }
+  }
+
+  /**
+   * Returns current batch mode state
+   */
+  isBatchModeEnabled(): boolean {
+    return this.isBatchMode;
   }
 
   /**
    * Forces an immediate update regardless of batch mode (for final batch render)
    */
   triggerBatchUpdate(): void {
-    console.log('🎨 [RENDERER] triggerBatchUpdate called - forcing update even in batch mode');
-    
-    // Apply any pending ReflectEffect updates (opacity/sharpness) first
-    if (this.reflectEffect) {
-      console.log('🪞 [RENDERER] Triggering ReflectEffect batch update for opacity/sharpness');
-      this.reflectEffect.triggerBatchUpdate();
-      // Ensure reflect texture update happens inline with the main redraw
-      console.log('🪞 [RENDERER] Setting final batch flag for inline reflect update');
-      this.reflectEffect.setFinalBatchUpdate(true);
-    }
-    
-    // Do not defer reflect for next redraw; apply within the same redraw pass
-    this.deferReflectForNextRedraw = false;
-    // Clear any pending deferred reflect texture so we don't schedule a second update
-    this.pendingReflectTextureUpdate = null;
-    
-    console.log('⚡ [RENDERER] Triggering immediate batch update');
     // Force update even in batch mode
     this.debouncedUpdate();
   }
@@ -472,6 +493,9 @@ export class FilterRenderer {
    * Uses object pooling and async/await for better performance and maintainability
    */
   async renderToBytes(): Promise<Uint8Array> {
+    this.isExporting = true;
+    this.pendingUpdateDuringExport = false;
+    
     const { svg } = this.svgElements;
     const { renderCanvas, renderCtx, objectPool } = this.canvasResources;
     
@@ -502,6 +526,9 @@ export class FilterRenderer {
     renderCanvas.height = finalHeight;
     renderCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform matrix
     renderCtx.imageSmoothingEnabled = APP_CONFIG.QUALITY.IMAGE_SMOOTHING_ENABLED;
+    if (renderCtx.imageSmoothingEnabled) {
+      (renderCtx as any).imageSmoothingQuality = 'high';
+    }
     renderCtx.clearRect(0, 0, finalWidth, finalHeight);
 
     // Get pooled objects or create new ones
@@ -511,23 +538,48 @@ export class FilterRenderer {
     let svgUrl: string | null = null;
     
     // RACE CONDITION FIX: Get texture snapshot for safe swapping
-    const textureSnapshot = this.imageLoader?.getTextureSnapshot() || null;
+    // We need to ensure the high-res texture is available before snapshotting
+    let textureSnapshot = this.imageLoader?.getTextureSnapshot() || null;
+    
+    // If we are using the image loader and have a current image, ensure high-res texture is ready
+    // This moves the 7s+ generation time to the Export click, not the selection time
+    if (this.imageLoader && !textureSnapshot?.originalTexture && this.imageLoader.getCurrentImageId()) {
+      await this.imageLoader.getOriginalMirroredTextureAsync();
+      // Refresh snapshot after generation
+      textureSnapshot = this.imageLoader.getTextureSnapshot();
+    }
+
     let originalTextureSwapped = false;
     
     // Prepare a HIGH-RES displacement texture for export (do not reuse downscaled preview)
     // 1) Save current feImg href to restore later
     const originalFeImgHref = this.svgElements.feImg.getAttribute('href');
-    const prepareHighResFeImgForExport = () => {
+    
+    // Async function to prepare high-res texture without blocking UI
+    const prepareHighResFeImgForExport = async (): Promise<void> => {
       const { canvas, ctx } = this.canvasResources;
       const { mapImage } = this.engineState;
       
       // If there is no displacement map yet, fall back to existing preview texture
       if (!mapImage) {
-        const fallbackUrl = canvas.toDataURL('image/png');
+        const fallbackUrl = await new Promise<string>((resolve) => {
+          canvas.toBlob(blob => {
+             if (blob) {
+               const reader = new FileReader();
+               reader.onload = () => resolve(reader.result as string);
+               reader.readAsDataURL(blob);
+             } else {
+               resolve(canvas.toDataURL('image/png'));
+             }
+          });
+        });
         this.svgElements.feImg.setAttribute('href', fallbackUrl);
         return;
       }
       
+      // Unblock UI
+      await new Promise(r => setTimeout(r, 0));
+
       // Render the tiled map at FULL SVG viewBox resolution (ratio = 1)
       const fullW = Math.max(1, vb.width);
       const fullH = Math.max(1, vb.height);
@@ -537,19 +589,32 @@ export class FilterRenderer {
       
       // Compute scale using cachedBaseScale without preview ratio downscaling
       const scalePct = this.engineState.scalePct;
-      const scaleForExport = (scalePct * 0.01) * this.cachedBaseScale;
+      const textureScale = this.engineState.textureScale;
+      const scaleForExport = (scalePct * textureScale * 0.01) * this.cachedBaseScale;
       
       // Draw tiled map
       ctx.imageSmoothingEnabled = APP_CONFIG.QUALITY.IMAGE_SMOOTHING_ENABLED;
+      if (ctx.imageSmoothingEnabled) {
+        (ctx as any).imageSmoothingQuality = 'high';
+      }
+      
+      // Optimization: Yield control if we have many layers or complex drawing
       if (this.engineState.layerImages && this.engineState.layerImages.length > 0) {
         for (const layer of this.engineState.layerImages) {
+           // Yield every layer to keep UI responsive
+           if (fullW > 2000 || fullH > 2000) {
+             await new Promise(r => setTimeout(r, 0));
+           }
+           
+          // scaleMultiplier modifies how fast this layer responds to global scale slider
+          const layerMultiplier = layer.scaleMultiplier ?? 1.0;
           this.drawLayer(
             ctx,
             fullW,
             fullH,
             layer.image,
             layer.tiling,
-            typeof layer.scale === 'number' ? layer.scale : this.engineState.scalePct,
+            this.engineState.scalePct * textureScale * layerMultiplier,
             layer.scaleMode || 'uniform',
             layer.opacity,
             layer.blendMode,
@@ -569,14 +634,35 @@ export class FilterRenderer {
       this.svgElements.feImg.setAttribute('width', String(fullW));
       this.svgElements.feImg.setAttribute('height', String(fullH));
       
-      // Inline as data URL for export
-      const dataUrl = canvas.toDataURL('image/png');
+      // Unblock UI before encoding
+      await new Promise(r => setTimeout(r, 0));
+
+      // Convert to Data URL asynchronously using Blob + FileReader
+      // This avoids the massive main thread freeze of synchronous toDataURL on 4k+ images
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+             // Fallback to sync if blob fails
+             resolve(canvas.toDataURL('image/png'));
+             return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to encode export texture'));
+          reader.readAsDataURL(blob);
+        }, 'image/png');
+      });
+
       this.svgElements.feImg.setAttribute('href', dataUrl);
     };
 
     try {
       // IMPORTANT: inline a high-res displacement texture so export is not limited by preview quality
-      prepareHighResFeImgForExport();
+      await prepareHighResFeImgForExport();
+      
+      // Unblock UI
+      await new Promise(r => setTimeout(r, 0));
+
       // Optional: for strict visual parity, keep preview texture instead of swapping to original
       if (!APP_CONFIG.QUALITY.MATCH_PREVIEW_ON_EXPORT && this.imageLoader && textureSnapshot) {
         const { originalTexture, previewTexture, imageId } = textureSnapshot;
@@ -596,6 +682,9 @@ export class FilterRenderer {
         }
       }
       
+      // Unblock UI
+      await new Promise(r => setTimeout(r, 0));
+      
       // Serialize SVG to string
       const svgString = xmlSerializer.serializeToString(svg);
       const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
@@ -604,7 +693,11 @@ export class FilterRenderer {
       // Load SVG as image
       await this.loadImageFromUrl(image, svgUrl);
       
+      // Unblock UI
+      await new Promise(r => setTimeout(r, 0));
+
       // Draw to canvas
+      renderCtx.clearRect(0, 0, finalWidth, finalHeight); // Ensure clear
       renderCtx.drawImage(image, 0, 0, finalWidth, finalHeight);
       
       // Convert canvas to Uint8Array
@@ -613,6 +706,8 @@ export class FilterRenderer {
       return imageBytes;
       
     } finally {
+      this.isExporting = false;
+
       // Restore feImg href after export
       if (originalFeImgHref !== null) {
         this.svgElements.feImg.setAttribute('href', originalFeImgHref);
@@ -623,6 +718,13 @@ export class FilterRenderer {
         if (console.info && APP_CONFIG.LICENSE.DEV_MODE_ENABLED) {
           console.info('Final render complete: restored preview texture for Live Preview');
         }
+      }
+      
+      // Process any updates that were blocked during export
+      if (this.pendingUpdateDuringExport) {
+        // Use triggerUpdate to debounce, or forceRedraw if immediate update needed
+        this.debouncedUpdate();
+        this.pendingUpdateDuringExport = false;
       }
       
       // Cleanup: return objects to pool and revoke URL
@@ -684,6 +786,94 @@ export class FilterRenderer {
   }
 
   /**
+   * Renders a thumbnail directly to a Data URL with internal cropping.
+   * Eliminates multiple encode/decode steps (Canvas -> Blob -> Image -> Canvas -> Blob -> DataURL).
+   */
+  async renderToThumbnailDataUrl(maxSide: number = 144, cropFactor: number = 2.0): Promise<string> {
+    const { svg } = this.svgElements;
+    const { renderCanvas, renderCtx, objectPool } = this.canvasResources;
+    const vb = svg.viewBox.baseVal;
+    // Standard thumbnail logic: render fixed size then crop center
+    const aspect = vb.width / Math.max(1, vb.height);
+    const renderW = Math.round(aspect >= 1 ? maxSide * cropFactor : (maxSide * cropFactor) * aspect);
+    const renderH = Math.round(aspect >= 1 ? (maxSide * cropFactor) / aspect : maxSide * cropFactor);
+    
+    // Setup intermediate canvas
+    renderCanvas.width = renderW;
+    renderCanvas.height = renderH;
+    renderCtx.setTransform(1, 0, 0, 1, 0, 0);
+    renderCtx.imageSmoothingEnabled = true;
+    
+    const xmlSerializer = objectPool?.getXMLSerializer() || new XMLSerializer();
+    const image = objectPool?.getImage() || new Image();
+    
+    const savedFeImgHref = this.svgElements.feImg.getAttribute('href');
+    const { canvas } = this.canvasResources;
+    this.svgElements.feImg.setAttribute('href', canvas.toDataURL('image/png'));
+    
+    let svgUrl: string | null = null;
+    try {
+      const svgString = xmlSerializer.serializeToString(svg);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      svgUrl = URL.createObjectURL(svgBlob);
+      await this.loadImageFromUrl(image, svgUrl);
+      
+      // Draw full image to canvas
+      renderCtx.clearRect(0, 0, renderW, renderH);
+      renderCtx.drawImage(image, 0, 0, renderW, renderH);
+      
+      // Create final cropped canvas
+      const cropCanvas = objectPool ? document.createElement('canvas') : this.canvasResources.tempCanvas; 
+      // Note: using tempCanvas might be risky if concurrent, but this is single-threaded mostly.
+      // To be safe, create a new small canvas or reuse a specific 'cropCanvas' if we added one.
+      // Let's just create one for now, it's cheap for small sizes.
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = maxSide;
+      finalCanvas.height = maxSide;
+      const finalCtx = finalCanvas.getContext('2d')!;
+      finalCtx.imageSmoothingEnabled = true;
+      // @ts-ignore
+      if (finalCtx.imageSmoothingQuality) (finalCtx as any).imageSmoothingQuality = 'high';
+      
+      // Calculate center crop
+      const cw = renderW / cropFactor; // = maxSide roughly, depending on aspect
+      const ch = renderH / cropFactor;
+      
+      // We want to output exactly maxSide x maxSide
+      // The input 'renderW/H' is scaled by cropFactor.
+      // We want to take the center '1/cropFactor' portion of the image.
+      
+      // Correct logic matching the worker:
+      // Source dimensions: renderW, renderH
+      // Target dimensions: maxSide, maxSide
+      // We want to simulate: Draw full image -> Crop center 1/cropFactor portion -> Scale to maxSide?
+      // No, usually we render larger, then crop the center.
+      
+      // Worker logic:
+      // srcW = img.width (renderW), srcH = img.height (renderH)
+      // cw = srcW / cropFactor, ch = srcH / cropFactor
+      // sx = (srcW - cw)/2, sy = (srcH - ch)/2
+      // drawImage(img, sx, sy, cw, ch, 0, 0, size, size)
+      
+      const cw_src = renderW / cropFactor;
+      const ch_src = renderH / cropFactor;
+      const sx = Math.max(0, (renderW - cw_src) / 2);
+      const sy = Math.max(0, (renderH - ch_src) / 2);
+      
+      finalCtx.drawImage(renderCanvas, sx, sy, cw_src, ch_src, 0, 0, maxSide, maxSide);
+      
+      return finalCanvas.toDataURL('image/png');
+      
+    } finally {
+      if (savedFeImgHref !== null) this.svgElements.feImg.setAttribute('href', savedFeImgHref);
+      if (objectPool) { objectPool.returnXMLSerializer(xmlSerializer); objectPool.returnImage(image); }
+      if (svgUrl && APP_CONFIG.PERFORMANCE.AUTO_CLEANUP_URLS) {
+        try { URL.revokeObjectURL(svgUrl); } catch {}
+      }
+    }
+  }
+
+  /**
    * Helper: Load image from URL with Promise wrapper
    */
   private loadImageFromUrl(image: HTMLImageElement, url: string): Promise<void> {
@@ -735,16 +925,10 @@ export class FilterRenderer {
    * Sets new map image and triggers redraw
    */
   setMapImage(mapImage: HTMLImageElement | null): void {
-    console.log('🗺️ [RENDERER] setMapImage called with:', mapImage ? `image (${mapImage.width}x${mapImage.height})` : 'null');
-    
     this.engineState.mapImage = mapImage;
     if (mapImage) {
-      console.log('🔄 [RENDERER] Updating scale cache after map image set');
       this.updateScaleCache(); // Update cache after map image is set
-      console.log('🎨 [RENDERER] Calling triggerUpdate from setMapImage');
       this.triggerUpdate();
-    } else {
-      console.log('🚫 [RENDERER] No map image to set, skipping update');
     }
   }
 

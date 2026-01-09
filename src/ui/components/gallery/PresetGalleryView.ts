@@ -4,8 +4,7 @@ import { ThumbnailRenderer } from './ThumbnailRenderer';
 import { createElement, appendChildren, replaceContent } from '../../utils/dom';
 import { licenseService } from '../../services';
 import type { Preset } from '../../presets';
-import { eventBus, emitDocumentEvent } from '../../core/EventBus';
-import { EVENTS } from '../../config/constants';
+import { appStore } from '../../store/AppStore';
 import { buildMapSourceFromPreset } from '../../utils/maps';
 
 export class PresetGalleryView {
@@ -17,6 +16,9 @@ export class PresetGalleryView {
   private nav: NavigationController;
   private observer: IntersectionObserver | null = null;
   private isDisabled = true;
+  private unsubscribeStore: (() => void) | null = null;
+  private lastImageVersion = 0;
+  private presetRandomizedHandler: ((e: Event) => void) | null = null;
 
   constructor() {
     this.store = new PresetStore();
@@ -29,33 +31,76 @@ export class PresetGalleryView {
 
   async init(): Promise<void> {
     await this.store.loadAll();
-    this.render();
+    await this.render();
     this.nav.init();
+    
+    // Subscribe to AppStore changes
+    this.unsubscribeStore = appStore.subscribe(() => {
+      this.handleStoreChange();
+    });
+    
+    // Initial state tracking
+    this.lastImageVersion = appStore.imageVersion;
+    
+    // Select first preset by default
+    const allPresets = this.store.getAllPresets();
+    if (allPresets.length > 0) {
+      const firstPreset = allPresets[0];
+      this.applyPreset(firstPreset, true); // true = silent (no HUD effect on init)
+    }
+    
     // Initial state: disabled until an image is selected
-    this.setThumbnailsDisabled(true);
+    this.setThumbnailsDisabled(!appStore.hasSelectedImage);
+    
     // Re-render badges on license change
     licenseService.onStateChange(() => this.refreshBadges());
-    // Image change -> rerender thumbs
-    document.addEventListener('thumbnail:rerender', () => { this.setThumbnailsDisabled(false); this.rerenderVisibleThumbs(); });
-    // Selection cleared -> reset all thumbs to skeleton
-    document.addEventListener('thumbnail:clear', () => this.setThumbnailsDisabled(true));
-    // Update selection ring on randomize from App
-    document.addEventListener('preset:randomized', (e) => {
+    
+    // Update selection ring on randomize from App (still uses DOM event for now)
+    this.presetRandomizedHandler = (e: Event) => {
       const presetName = (e as CustomEvent).detail?.presetName as string | undefined;
       if (!presetName) return;
       const preset = this.store.getAllPresets().find(p => p.name === presetName);
       if (!preset) return;
       const items = this.container.querySelectorAll('.selection-ring');
       items.forEach(r => { r.classList.remove('ring-black'); r.classList.add('ring-transparent'); });
-      const parent = Array.from(this.container.querySelectorAll('.preset-item')).find(el => (el as HTMLElement).dataset.presetName === preset.name);
-      const ring = parent?.querySelector('.selection-ring');
-      ring?.classList.remove('ring-transparent'); ring?.classList.add('ring-black');
-    });
+      const parents = Array.from(this.container.querySelectorAll('.preset-item')).filter(el => (el as HTMLElement).dataset.presetName === preset.name);
+      
+      // Scroll the first found instance into view centered
+      if (parents.length > 0) {
+        parents[0].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+
+      parents.forEach(parent => {
+        const ring = parent.querySelector('.selection-ring');
+        ring?.classList.remove('ring-transparent'); ring?.classList.add('ring-black');
+      });
+    };
+    document.addEventListener('preset:randomized', this.presetRandomizedHandler);
   }
 
-  private render(): void {
+  private handleStoreChange(): void {
+    const currentImageVersion = appStore.imageVersion;
+    const hasImage = appStore.hasSelectedImage;
+    
+    // Handle image version changes (new image loaded or cleared)
+    if (currentImageVersion !== this.lastImageVersion) {
+      this.lastImageVersion = currentImageVersion;
+      
+      if (hasImage) {
+        // Image loaded: enable thumbnails and re-render
+        this.setThumbnailsDisabled(false);
+        this.rerenderVisibleThumbs();
+      } else {
+        // Image cleared: disable thumbnails
+        this.setThumbnailsDisabled(true);
+      }
+    }
+  }
+
+  private async render(): Promise<void> {
     replaceContent(this.container, []);
-    for (const category of this.store.getCategories()) {
+    const categories = await this.store.getCategories();
+    for (const category of categories) {
       const group = document.createElement('div');
       group.className = 'preset-category-group';
       const header = document.createElement('div'); header.className = 'category-header'; header.textContent = category.name;
@@ -119,7 +164,7 @@ export class PresetGalleryView {
     sk.style.animation = 'thumbShimmer 1.2s ease-in-out infinite';
     item.appendChild(ring);
     item.appendChild(skeleton);
-    item.addEventListener('click', () => this.applyPreset(preset));
+    item.addEventListener('click', (e) => this.applyPreset(preset, false, item));
     // Apply disabled visuals if needed
     if (this.isDisabled) this.applyDisabledVisuals(item);
     return item;
@@ -142,7 +187,7 @@ export class PresetGalleryView {
       const shouldSave = confirm('Save this image as a custom preset?');
       if (shouldSave) {
         await this.store.saveCustomPreset(file);
-        this.render();
+        await this.render();
       } else {
         const reader = new FileReader();
         reader.onload = () => {
@@ -152,7 +197,8 @@ export class PresetGalleryView {
           item.prepend(img);
         };
         reader.readAsDataURL(file);
-        eventBus.emit(EVENTS.MAP_SELECTED as any, { map: file } as any);
+        // Set custom map directly in store
+        appStore.setActiveMapSource(file);
       }
     });
     return item;
@@ -203,15 +249,51 @@ export class PresetGalleryView {
     await this.thumbs.renderPresetThumbnail(preset, el, 'high');
   }
 
-  private applyPreset(preset: Preset): void {
+  private applyPreset(preset: Preset, silent: boolean = false, clickedElement?: HTMLElement): void {
+    // Clear all selection rings first
     const items = this.container.querySelectorAll('.selection-ring');
     items.forEach(r => { r.classList.remove('ring-black'); r.classList.add('ring-transparent'); });
-    const parent = Array.from(this.container.querySelectorAll('.preset-item')).find(el => (el as HTMLElement).dataset.presetName === preset.name);
-    const ring = parent?.querySelector('.selection-ring');
-    ring?.classList.remove('ring-transparent'); ring?.classList.add('ring-black');
-    document.dispatchEvent(new CustomEvent('preset:randomized', { detail: { presetName: preset.name } }));
-    emitDocumentEvent('preset:selected' as any, { preset } as any);
-    emitDocumentEvent('map:selected' as any, { map: buildMapSourceFromPreset(preset) } as any);
+    
+    // Find all preset items with the same name
+    const allMatchingItems = Array.from(this.container.querySelectorAll('.preset-item')).filter(
+      el => (el as HTMLElement).dataset.presetName === preset.name
+    ) as HTMLElement[];
+    
+    // If we have a clicked element, ensure it's visible and highlighted first
+    if (clickedElement && allMatchingItems.includes(clickedElement)) {
+      // Scroll clicked element into view smoothly and center it to show surrounding presets
+      clickedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      
+      // Highlight clicked element first (immediately)
+      const clickedRing = clickedElement.querySelector('.selection-ring');
+      clickedRing?.classList.remove('ring-transparent'); 
+      clickedRing?.classList.add('ring-black');
+      
+      // Then highlight all other matching items
+      allMatchingItems.forEach(parent => {
+        if (parent !== clickedElement) {
+          const ring = parent.querySelector('.selection-ring');
+          ring?.classList.remove('ring-transparent'); 
+          ring?.classList.add('ring-black');
+        }
+      });
+    } else {
+      // No clicked element (e.g., from randomizer) - highlight all matching items
+      allMatchingItems.forEach(parent => {
+        const ring = parent.querySelector('.selection-ring');
+        ring?.classList.remove('ring-transparent'); 
+        ring?.classList.add('ring-black');
+      });
+    }
+    
+    // Note: We no longer dispatch 'preset:randomized' here because:
+    // 1. Selection rings are already updated above
+    // 2. The event handler scrolls to parents[0] which causes unwanted scroll to Popular category
+    // The 'preset:randomized' event is still dispatched by RandomizerManager for Shuffle operations
+    
+    // Update store atomically with both preset and map
+    const mapSource = buildMapSourceFromPreset(preset);
+    appStore.setPresetAndMap(preset, mapSource);
   }
 
   public refreshBadges(): void {
@@ -234,8 +316,8 @@ export class PresetGalleryView {
   private rerenderVisibleThumbs(): void {
     // Start a new generation so all following renders are consistent
     this.thumbs.bumpGeneration();
-    // For items that уже имели миниатюру: показать «stale» (полупрозрачность + скелетон)
-    // Для ещё не загруженных — оставить их в исходном скелетоне без изменения прозрачности
+    // For items that already had a thumbnail: show "stale" (semi-transparent + skeleton)
+    // For not yet loaded - leave them in original skeleton without opacity change
     this.container.querySelectorAll('.preset-item').forEach(el => {
       const h = el as HTMLElement;
       const data = (h as any).dataset;
@@ -303,13 +385,30 @@ export class PresetGalleryView {
     el.style.backgroundSize = '';
     el.style.backgroundPosition = '';
     el.style.backgroundRepeat = '';
-    // Solid disabled background to avoid halo artifacts
-    el.style.backgroundColor = 'var(--color-disabled-bg)';
+    el.style.backgroundColor = '';
   }
 
   private clearDisabledVisuals(el: HTMLElement): void {
     delete (el as any).dataset.disabled;
     el.style.backgroundColor = '';
+  }
+
+  /**
+   * Cleanup: unsubscribe from store and remove event listeners
+   */
+  destroy(): void {
+    if (this.unsubscribeStore) {
+      this.unsubscribeStore();
+      this.unsubscribeStore = null;
+    }
+    if (this.presetRandomizedHandler) {
+      document.removeEventListener('preset:randomized', this.presetRandomizedHandler);
+      this.presetRandomizedHandler = null;
+    }
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = null;
+    }
   }
 }
 

@@ -30,6 +30,11 @@ export function initTabs() {
               c.setAttribute('aria-hidden', 'true');
           }
       });
+
+      // Dispatch event for other components (like LightPositionHandle)
+      document.dispatchEvent(new CustomEvent('tab:changed', {
+          detail: { target: targetId }
+      }));
   }
 
   // Add click handlers

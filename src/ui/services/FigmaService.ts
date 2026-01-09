@@ -19,7 +19,6 @@
 
 import type { FigmaMessage, FigmaMessageHandlers } from '../types';
 import { APP_CONFIG } from '../config/constants';
-import { eventBus } from '../core/EventBus';
 
 /**
  * Service for all Figma communication
@@ -191,6 +190,11 @@ export class FigmaService {
     window.addEventListener('message', (event: MessageEvent) => {
       const raw = (event as any)?.data;
       const message = (raw && (raw.pluginMessage ? raw.pluginMessage : raw)) as FigmaMessage | undefined;
+      
+      if (message && message.type) {
+         console.log('[DEBUG] FigmaService received message:', message.type);
+      }
+
       if (!message || !message.type) return;
 
       // Call registered handlers
@@ -204,22 +208,7 @@ export class FigmaService {
           }
         });
       }
-
-      // Emit events through EventBus for modern components
-      this.emitMessageEvent(message);
     });
-  }
-
-  private emitMessageEvent(message: FigmaMessage): void {
-    switch (message.type) {
-      case 'selection-updated':
-        eventBus.emit('image:selected', { imageBytes: message.imageBytes });
-        break;
-      case 'selection-cleared':
-        eventBus.emit('image:cleared', undefined);
-        break;
-      // Add more mappings as needed
-    }
   }
 
   /**

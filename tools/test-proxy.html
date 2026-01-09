@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proxy Test</title>
+</head>
+<body>
+    <h1>Testing GitHub Proxy</h1>
+    <button onclick="testProxy()">Test Proxy</button>
+    <div id="results"></div>
+
+    <script>
+        async function testProxy() {
+            const results = document.getElementById('results');
+            results.innerHTML = 'Testing...';
+            
+            try {
+                console.log('Testing proxy...');
+                const response = await fetch('/api/github/assets/presets.json');
+                console.log('Response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Data received:', data);
+                    
+                    results.innerHTML = `
+                        <h3>✅ Success!</h3>
+                        <p>Loaded ${data.presets?.length || 0} presets</p>
+                        <p>Version: ${data.version}</p>
+                        <p>Updated: ${data.updated}</p>
+                        <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                    `;
+                } else {
+                    results.innerHTML = `❌ Error: ${response.status} ${response.statusText}`;
+                }
+            } catch (error) {
+                console.error('Test failed:', error);
+                results.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

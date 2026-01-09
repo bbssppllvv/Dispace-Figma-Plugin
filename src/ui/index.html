@@ -15,6 +15,7 @@
         <!-- The container for the SVG engine, will be populated by engine.ts -->
         <div id="preview" class="absolute inset-0" role="img" aria-label="Preview of displacement effect"></div>
         
+        
         <!-- The overlay for notifications, now a sibling to the preview container -->
         <div id="loadingOverlay" class="absolute inset-0 flex items-center justify-center z-10 pe-none" aria-live="polite">
           <div class="message pe-auto" role="status"></div>
@@ -44,8 +45,8 @@
             <div class="flex space-x-1" id="controls-tab-list" role="tablist" aria-label="Control categories">
                 <button class="tab-button" role="tab" aria-controls="main-controls" aria-selected="false" data-target="main-controls" tabindex="0">Displace</button>
                 <button class="tab-button" role="tab" aria-controls="adjust-controls" aria-selected="false" data-target="adjust-controls" tabindex="-1">Effects</button>
-                <button class="tab-button" role="tab" aria-controls="grain-controls" aria-selected="false" data-target="grain-controls" tabindex="-1">Grain</button>
                 <button class="tab-button" role="tab" aria-controls="reflect-controls" aria-selected="false" data-target="reflect-controls" tabindex="-1">Reflect</button>
+                <button class="tab-button" role="tab" aria-controls="grain-controls" aria-selected="false" data-target="grain-controls" tabindex="-1">Grain</button>
             </div>
           </section>
 
@@ -56,13 +57,13 @@
               <!-- Strength -->
               <div class="flex items-center space-x-2">
                 <label for="strength" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Controls how intense the displacement effect is. Negative values create inverted displacement.">Strength</label>
-                <div id="strength" class="slider bipolar-slider" role="slider" aria-label="Displacement strength" aria-valuemin="-400" aria-valuemax="400" aria-valuenow="0" data-min="-400" data-max="400" data-snap-threshold="20" tabindex="0"></div>
+                <div id="strength" class="slider bipolar-slider" role="slider" aria-label="Displacement strength" aria-valuemin="-600" aria-valuemax="600" aria-valuenow="0" data-min="-600" data-max="600" data-snap-threshold="20" tabindex="0"></div>
               </div>
               
               <!-- Scale -->
               <div class="flex items-center space-x-2">
                 <label for="scale" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Size of displacement patterns. Higher values create larger, smoother distortions.">Scale</label>
-                <div id="scale" class="slider" role="slider" aria-label="Displacement scale" aria-valuemin="2" aria-valuemax="150" aria-valuenow="20" data-min="2" data-max="150" tabindex="0"></div>
+                <div id="scale" class="slider" role="slider" aria-label="Displacement scale" aria-valuemin="2" aria-valuemax="300" aria-valuenow="20" data-min="2" data-max="300" tabindex="0"></div>
               </div>
               
               <!-- Soft -->
@@ -93,26 +94,50 @@
               </div>
             </div>
 
-            <!-- Grain Controls -->
-            <div id="grain-controls" class="tab-content hidden" role="tabpanel" aria-labelledby="grain-controls-tab" tabindex="0">
-              <p class="text-xs text-secondary">Grain controls are not yet available.</p>
-            </div>
-            
             <!-- Reflect Controls -->
             <div id="reflect-controls" class="tab-content hidden space-y-4" role="tabpanel" aria-labelledby="reflect-controls-tab" tabindex="0">
-              <!-- Opacity -->
+              <!-- Reflect Strength -->
               <div class="flex items-center space-x-2">
-                <label for="reflect-opacity" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Controls the transparency of the reflection effect. Higher values make reflections more visible.">Opacity</label>
-                <div id="reflect-opacity" class="slider" role="slider" aria-label="Reflect effect opacity" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-min="0" data-max="100" tabindex="0"></div>
+                <label for="reflect-strength" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Reflect intensity. Controls the brightness of highlights reacting to the displacement map.">Strength</label>
+                <div id="reflect-strength" class="slider" role="slider" aria-label="Reflect strength" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-min="0" data-max="100" tabindex="0"></div>
               </div>
 
-              <!-- Sharpness -->
+              <!-- Reflect Softness -->
               <div class="flex items-center space-x-2">
-                <label for="reflect-sharpness" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Adjusts reflection clarity and contrast. Higher values create sharper, more defined reflections.">Sharpness</label>
-                <div id="reflect-sharpness" class="slider" role="slider" aria-label="Reflect sharpness and contrast" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" data-min="0" data-max="100" tabindex="0"></div>
+                <label for="reflect-soft" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Reflect softness. Controls how much the light 'spreads' over the surface.">Softness</label>
+                <div id="reflect-soft" class="slider" role="slider" aria-label="Reflect softness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="60" data-min="0" data-max="100" tabindex="0"></div>
               </div>
 
+              <!-- Reflect Sharpness -->
+              <div class="flex items-center space-x-2">
+                <label for="reflect-sharp" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Reflect sharpness. Controls how 'focused' the highlights are.">Sharpness</label>
+                <div id="reflect-sharp" class="slider" role="slider" aria-label="Reflect sharpness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30" data-min="0" data-max="100" tabindex="0"></div>
+              </div>
+              
+              <div class="pt-2 text-[10px] text-ui-text-tertiary uppercase tracking-wider text-center">
+                Drag handle on preview to move light
+              </div>
             </div>
+
+            <!-- Grain Controls -->
+            <div id="grain-controls" class="tab-content hidden space-y-4" role="tabpanel" aria-labelledby="grain-controls-tab" tabindex="0">
+              <!-- Grain -->
+              <div class="flex items-center space-x-2">
+                <label for="grain" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Adds film grain noise texture to the image.">Grain</label>
+                <div id="grain" class="slider" role="slider" aria-label="Grain intensity" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-min="0" data-max="100" tabindex="0"></div>
+              </div>
+
+              <!-- Grain Size -->
+              <div class="flex items-center space-x-2">
+                <label for="grain-size" class="text-sm w-[70px] shrink-0 truncate" data-tooltip="Controls the coarseness of the grain particles.">Size</label>
+                <div id="grain-size" class="slider" role="slider" aria-label="Grain size" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" data-min="0" data-max="100" tabindex="0"></div>
+              </div>
+            </div>
+            
+            <!-- Reflect Controls - TODO: Future implementation -->
+            <!-- <div id="reflect-controls" class="tab-content hidden space-y-4" role="tabpanel">
+              Placeholder for future Reflect effect implementation
+            </div> -->
           </div>
         </div>
         
@@ -166,4 +191,4 @@
   <!-- Main script -->
   <script type="module" src="main.ts"></script>
 </body>
-</html> 
+</html>

@@ -1,13 +1,13 @@
 // Re-export existing types first
 export type { Preset } from '../presets';
-export type { CustomPreset } from '../customPresets';
+export type { CustomPreset } from '../services/CustomPresetService';
 export type { SliderInstance } from '../components/Controls';
 export type { DisplacementEngine } from '../engine';
 
 // Import types for internal use
 import type { Preset } from '../presets';
 import type { MapSource } from '../engine/types';
-import type { CustomPreset } from '../customPresets';
+import type { CustomPreset } from '../services/CustomPresetService';
 
 // Core application types
 export interface AppState {
@@ -23,8 +23,6 @@ export interface EffectSettings {
   chromatic: number;
   blur: number;
   noise: number;
-  reflectOpacity: number;
-  reflectSharpness: number;
 }
 
 // Event types for better type safety

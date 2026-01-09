@@ -2,13 +2,27 @@
 <div id="paywall-overlay" class="hidden paywall-modal overlay-fixed">
   <div class="modal-shell">
     
-    <!-- Left Panel - Info -->
+    <!-- Left Panel - Preview -->
     <div class="modal-panel-left">
       
       <!-- Back Button -->
-      <div style="margin-bottom: 16px;">
+      <div style="position: absolute; top: 16px; left: 16px; z-index: 10;">
         <button id="close-paywall-button" class="btn btn-secondary text-md size-32" style="padding: 0;" title="Back">←</button>
       </div>
+      
+      <!-- Placeholder for future illustration/video -->
+      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary);">
+        <!-- Future: illustration or video showcase -->
+        <div class="text-body" style="text-align: center;">
+          <div style="margin-bottom: 8px;">Preview of Pro features</div>
+          <div class="text-xs">Illustration coming soon</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Panel - Info -->
+    <div class="modal-panel-right">
 
       <!-- Header -->
       <div style="margin-bottom: 16px;">
@@ -39,20 +53,6 @@
         <button id="go-pro-button" class="btn btn-primary w-full">
           Get Pro Access
         </button>
-      </div>
-
-    </div>
-
-    <!-- Right Panel - Illustration -->
-    <div class="modal-panel-right">
-      
-      <!-- Placeholder for future illustration/video -->
-      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary);">
-        <!-- Future: illustration or video showcase -->
-        <div class="text-body" style="text-align: center;">
-          <div style="margin-bottom: 8px;">Preview of Pro features</div>
-          <div class="text-xs">Illustration coming soon</div>
-        </div>
       </div>
 
     </div>

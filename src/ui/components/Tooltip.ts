@@ -1,5 +1,6 @@
 export interface TooltipConfig {
   content: string;
+  image?: string;
   delay?: number;
 }
 
@@ -67,15 +68,49 @@ export class Tooltip {
 
     this.tooltipElement = document.createElement('div');
     this.tooltipElement.className = 'tooltip';
-    this.tooltipElement.textContent = this.config.content;
     this.tooltipElement.setAttribute('role', 'tooltip');
 
+    // Add image if present
+    if (this.config.image) {
+      const imgContainer = document.createElement('div');
+      imgContainer.className = 'tooltip-image-container';
+      const img = document.createElement('img');
+      img.src = this.config.image;
+      img.className = 'tooltip-image';
+      img.alt = 'Effect preview';
+      
+      // Ensure we reposition once the image loads and affects layout
+      img.onload = () => {
+        if (this.tooltipElement) {
+            this.positionTooltip();
+        }
+      };
+      
+      imgContainer.appendChild(img);
+      this.tooltipElement.appendChild(imgContainer);
+    }
+
+    const text = document.createElement('div');
+    text.className = 'tooltip-content';
+    text.textContent = this.config.content;
+    this.tooltipElement.appendChild(text);
+
     document.body.appendChild(this.tooltipElement);
+    
+    // Initial position attempt
     this.positionTooltip();
 
-    // Force reflow for animation
-    this.tooltipElement.offsetHeight;
-    this.tooltipElement.classList.add('tooltip-visible');
+    // Defer visibility to ensure layout is calculated correctly
+    requestAnimationFrame(() => {
+      if (this.tooltipElement) {
+        // Re-calculate position after browser has had a chance to perform layout
+        this.positionTooltip();
+        
+        // Force reflow for animation
+        this.tooltipElement.offsetHeight;
+        this.tooltipElement.classList.add('tooltip-visible');
+      }
+    });
   }
 
   private hide() {
@@ -118,10 +153,29 @@ export class Tooltip {
     this.tooltipElement.style.left = `${left}px`;
   }
 
-  public updateContent(content: string) {
+  public updateContent(content: string, image?: string) {
     this.config.content = content;
+    if (image !== undefined) {
+      this.config.image = image;
+    }
+    
     if (this.tooltipElement) {
-      this.tooltipElement.textContent = content;
+      const textEl = this.tooltipElement.querySelector('.tooltip-content');
+      if (textEl) textEl.textContent = content;
+      
+      // Handle image update if needed - simpler to recreate if structure changes
+      // but for now assuming structure is stable if image existed
+      if (this.config.image) {
+        let img = this.tooltipElement.querySelector('img');
+        if (img) {
+          img.src = this.config.image;
+        } else {
+          // Re-render if image was added
+          this.hide();
+          this.show();
+        }
+      }
+      
       this.positionTooltip();
     }
   }

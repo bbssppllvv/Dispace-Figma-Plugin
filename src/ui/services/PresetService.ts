@@ -1,20 +1,26 @@
 /**
  * Preset Service
  * 
- * Загружает пресеты динамически с CDN вместо статической сборки.
- * Позволяет обновлять пресеты без пересборки плагина.
+ * Loads presets dynamically from CDN instead of static build.
+ * Allows updating presets without rebuilding the plugin.
  */
 
-import type { Preset } from '../presets/types';
+import type { Preset, PresetCategory, SampleImage, TooltipData } from '../presets/types';
 
 interface PresetManifest {
   version: string;
   updated: string;
   presets: Preset[];
+  categories?: PresetCategory[];
+  sampleImages?: SampleImage[];
+  tooltips?: TooltipData[];
 }
 
 export class PresetService {
   private presets: Preset[] = [];
+  private categories: PresetCategory[] = [];
+  private sampleImages: SampleImage[] = [];
+  private tooltips: TooltipData[] = [];
   private isLoaded = false;
   private loadPromise: Promise<void> | null = null;
   
@@ -23,11 +29,18 @@ export class PresetService {
   private readonly CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
   /**
-   * Загрузить пресеты с CDN (с кэшированием)
+   * Load presets from CDN (with caching)
+   * @param force - If true, bypasses cache and forces a fresh fetch from CDN
    */
-  async loadPresets(): Promise<Preset[]> {
-    if (this.isLoaded) {
+  async loadPresets(force: boolean = false): Promise<Preset[]> {
+    if (!force && this.isLoaded) {
       return this.presets;
+    }
+
+    // If forced, reset loading state
+    if (force) {
+      this.isLoaded = false;
+      this.loadPromise = null;
     }
 
     if (this.loadPromise) {
@@ -35,27 +48,33 @@ export class PresetService {
       return this.presets;
     }
 
-    this.loadPromise = this.loadPresetsInternal();
+    this.loadPromise = this.loadPresetsInternal(force);
     await this.loadPromise;
     return this.presets;
   }
 
-  private async loadPresetsInternal(): Promise<void> {
+  private async loadPresetsInternal(force: boolean = false): Promise<void> {
     try {
-      // Попробуем загрузить из кэша
-      const cached = this.getCachedPresets();
+      // Try to load from cache unless forced
+      if (!force) {
+        const cached = this.getCachedPresets();
       if (cached) {
         this.presets = cached.presets;
+        this.categories = cached.categories || [];
+        this.sampleImages = cached.sampleImages || [];
+        this.tooltips = cached.tooltips || [];
         this.isLoaded = true;
         console.log(`✅ Loaded ${this.presets.length} presets from cache`);
-        
-        // Загружаем свежие данные в фоне
-        this.refreshPresetsInBackground();
-        return;
+
+          // Load fresh data in background
+          this.refreshPresetsInBackground();
+          return;
+        }
       }
 
-      // Загружаем с CDN
-      const response = await fetch(this.CDN_PRESETS_URL, {
+      // Load from CDN with cache busting if forced
+      const url = force ? `${this.CDN_PRESETS_URL}?t=${Date.now()}` : this.CDN_PRESETS_URL;
+      const response = await fetch(url, {
         cache: 'no-cache',
         headers: {
           'Accept': 'application/json'
@@ -66,19 +85,34 @@ export class PresetService {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const manifest: PresetManifest = await response.json();
-      this.presets = this.sortPresets(manifest.presets || []);
+      const text = await response.text();
+      if (!text || text.trim().length === 0) {
+        throw new Error('Empty response from CDN');
+      }
+      
+      let manifest: PresetManifest;
+      try {
+        manifest = JSON.parse(text);
+      } catch (parseError) {
+        console.error('Failed to parse presets.json from CDN:', parseError);
+        console.error('Response text (first 200 chars):', text.substring(0, 200));
+        throw new Error(`Invalid JSON in presets.json: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+      }
+      this.presets = this.processPresets(manifest.presets || []);
+      this.categories = this.processCategories(manifest.categories || []);
+      this.sampleImages = (manifest.sampleImages || []).sort((a, b) => a.order - b.order);
+      this.tooltips = manifest.tooltips || [];
       this.isLoaded = true;
 
-      // Кэшируем результат
+      // Cache the result
       this.cachePresets(manifest);
 
-      console.log(`✅ Loaded ${this.presets.length} presets from CDN`);
+      console.log(`✅ Loaded ${this.presets.length} presets and ${this.categories.length} categories from CDN`);
 
     } catch (error) {
       console.error('❌ Failed to load presets from CDN:', error);
       
-      // Fallback на встроенные пресеты
+      // Fallback to built-in presets
       this.presets = await this.loadFallbackPresets();
       this.isLoaded = true;
       
@@ -93,58 +127,131 @@ export class PresetService {
       });
 
       if (response.ok) {
-        const manifest: PresetManifest = await response.json();
-        const newPresets = this.sortPresets(manifest.presets || []);
+        const text = await response.text();
+        if (!text || text.trim().length === 0) {
+          console.warn('⚠️ Empty response during background refresh');
+          return;
+        }
         
-        // Проверяем, изменились ли пресеты
-        if (JSON.stringify(newPresets) !== JSON.stringify(this.presets)) {
+        let manifest: PresetManifest;
+        try {
+          manifest = JSON.parse(text);
+        } catch (parseError) {
+          console.error('Failed to parse presets.json during background refresh:', parseError);
+          console.error('Response text (first 200 chars):', text.substring(0, 200));
+          return;
+        }
+        const newPresets = this.processPresets(manifest.presets || []);
+        const newCategories = this.processCategories(manifest.categories || []);
+        const newSampleImages = (manifest.sampleImages || []).sort((a, b) => a.order - b.order);
+        const newTooltips = manifest.tooltips || [];
+        
+        // Check if data has changed
+        if (JSON.stringify(newPresets) !== JSON.stringify(this.presets) || 
+            JSON.stringify(newCategories) !== JSON.stringify(this.categories) ||
+            JSON.stringify(newSampleImages) !== JSON.stringify(this.sampleImages) ||
+            JSON.stringify(newTooltips) !== JSON.stringify(this.tooltips)) {
           this.presets = newPresets;
+          this.categories = newCategories;
+          this.sampleImages = newSampleImages;
+          this.tooltips = newTooltips;
           this.cachePresets(manifest);
           
-          // Уведомляем UI об обновлении
+          // Notify UI about updates
           document.dispatchEvent(new CustomEvent('presets:updated', {
-            detail: { presets: this.presets }
+            detail: { 
+              presets: this.presets, 
+              categories: this.categories,
+              sampleImages: this.sampleImages,
+              tooltips: this.tooltips
+            }
           }));
           
-          console.log('🔄 Presets updated in background');
+          console.log('🔄 Presets and categories updated in background');
         }
       }
     } catch (error) {
-      // Тихо игнорируем ошибки фоновой загрузки
+      // Silently ignore background load errors
       console.warn('Background preset refresh failed:', error);
     }
   }
 
-  private sortPresets(presets: Preset[]): Preset[] {
-    const categoryPriority: Record<string, number> = {
-      'Popular': 1,
-      'Ribbed glass': 2,
-      'Fabric': 3,
-      'Geometric': 4,
-      'Organic': 5,
-      'Custom': 100
-    };
-
-    return presets.sort((a, b) => {
-      const pa = categoryPriority[a.category] ?? 999;
-      const pb = categoryPriority[b.category] ?? 999;
-      if (pa !== pb) return pa - pb;
-      const oa = a.order ?? 9999;
-      const ob = b.order ?? 9999;
-      if (oa !== ob) return oa - ob;
+  private processPresets(presets: Preset[]): Preset[] {
+    // Process presets with support for legacy and new categories
+    return presets.map(preset => {
+      // Migrate legacy category field to new categories format
+      if (preset.category && !preset.categories) {
+        preset.categories = [preset.category];
+      }
+      
+      // Backward compatibility: set category from the first category
+      if (preset.categories && preset.categories.length > 0) {
+        preset.category = preset.categories[0];
+      }
+      
+      return preset;
+    }).sort((a, b) => {
+      // Sort by categories and order
+      const primaryCategoryA = a.categories?.[0] || a.category || '';
+      const primaryCategoryB = b.categories?.[0] || b.category || '';
+      
+      const categoryA = this.getCategoryByIdOrName(primaryCategoryA);
+      const categoryB = this.getCategoryByIdOrName(primaryCategoryB);
+      
+      const orderA = categoryA?.order ?? 999;
+      const orderB = categoryB?.order ?? 999;
+      
+      if (orderA !== orderB) return orderA - orderB;
+      
+      // Sort inside category by preset order
+      const presetOrderA = a.order ?? 9999;
+      const presetOrderB = b.order ?? 9999;
+      if (presetOrderA !== presetOrderB) return presetOrderA - presetOrderB;
+      
       return a.name.localeCompare(b.name);
     });
+  }
+  
+  private processCategories(categories: PresetCategory[]): PresetCategory[] {
+    // Create default categories if missing
+    const defaultCategories: PresetCategory[] = [
+      { id: 'popular', name: 'Popular', order: 1 },
+      { id: 'ribbed-glass', name: 'Ribbed glass', order: 2 },
+      { id: 'fabric', name: 'Fabric', order: 3 },
+      { id: 'geometric', name: 'Geometric', order: 4 },
+      { id: 'organic', name: 'Organic', order: 5 },
+      { id: 'custom', name: 'Custom', order: 100 }
+    ];
+    
+    // If no categories, use defaults
+    if (categories.length === 0) {
+      return defaultCategories;
+    }
+    
+    // Sort by order
+    return categories.sort((a, b) => a.order - b.order);
+  }
+  
+  private getCategoryByIdOrName(idOrName: string): PresetCategory | undefined {
+    return this.categories.find(cat => cat.id === idOrName || cat.name === idOrName);
   }
 
   private getCachedPresets(): PresetManifest | null {
     try {
-      // Проверяем доступность localStorage
+      // Check localStorage availability
       if (!this.isStorageAvailable()) return null;
       
       const cached = localStorage.getItem(this.CACHE_KEY);
       if (!cached) return null;
 
-      const data = JSON.parse(cached);
+      let data;
+      try {
+        data = JSON.parse(cached);
+      } catch (parseError) {
+        console.error('Failed to parse cached presets:', parseError);
+        this.clearStorageItem(this.CACHE_KEY);
+        return null;
+      }
       const age = Date.now() - data.timestamp;
       
       if (age > this.CACHE_DURATION) {
@@ -168,7 +275,7 @@ export class PresetService {
         manifest
       }));
     } catch (error) {
-      // Игнорируем ошибки кэширования
+      // Ignore cache errors
       console.warn('Cache storage failed:', error);
     }
   }
@@ -190,52 +297,85 @@ export class PresetService {
         localStorage.removeItem(key);
       }
     } catch (error) {
-      // Игнорируем ошибки
+      // Ignore errors
     }
   }
 
   private async loadFallbackPresets(): Promise<Preset[]> {
-    // Нет fallback пресетов - все загружается с CDN
+    // No fallback presets - everything loads from CDN
     console.warn('No fallback presets available, using empty array');
     return [];
   }
 
   /**
-   * Получить все пресеты
+   * Get all presets
    */
   async getAllPresets(): Promise<Preset[]> {
     return this.loadPresets();
   }
 
   /**
-   * Получить пресеты по категории
+   * Get presets by category (supports both ID and category name)
    */
-  async getPresetsByCategory(category: string): Promise<Preset[]> {
+  async getPresetsByCategory(categoryIdOrName: string): Promise<Preset[]> {
     const presets = await this.loadPresets();
-    return presets.filter(preset => preset.category === category);
+    return presets.filter(preset => 
+      preset.categories?.includes(categoryIdOrName) || 
+      preset.category === categoryIdOrName
+    );
   }
 
   /**
-   * Получить все категории
+   * Get all categories (new API)
+   */
+  async getCategoriesData(): Promise<PresetCategory[]> {
+    await this.loadPresets();
+    return this.categories;
+  }
+
+  /**
+   * Get all categories (legacy API - returns names only)
    */
   async getCategories(): Promise<string[]> {
-    const presets = await this.loadPresets();
-    const categories = new Set(presets.map(preset => preset.category));
-    return Array.from(categories);
+    const categories = await this.getCategoriesData();
+    return categories.map(cat => cat.name);
   }
 
   /**
-   * Принудительно обновить пресеты
+   * Get all sample images
+   */
+  async getSampleImages(): Promise<SampleImage[]> {
+    await this.loadPresets();
+    return this.sampleImages;
+  }
+
+  /**
+   * Get all tooltips
+   */
+  async getTooltips(): Promise<TooltipData[]> {
+    await this.loadPresets();
+    return this.tooltips;
+  }
+
+  /**
+   * Get category by ID or name
+   */
+  async getCategoryById(id: string): Promise<PresetCategory | undefined> {
+    await this.loadPresets();
+    return this.getCategoryByIdOrName(id);
+  }
+
+  /**
+   * Force refresh presets
    */
   async refreshPresets(): Promise<Preset[]> {
     this.clearStorageItem(this.CACHE_KEY);
-    this.isLoaded = false;
-    this.loadPromise = null;
-    return this.loadPresets();
+    // Pass force=true to bypass cache and append timestamp
+    return this.loadPresets(true);
   }
 
   /**
-   * Очистить кэш
+   * Clear cache
    */
   clearCache(): void {
     this.clearStorageItem(this.CACHE_KEY);
@@ -246,4 +386,3 @@ export class PresetService {
 
 // Singleton instance
 export const presetService = new PresetService();
-

@@ -41,6 +41,7 @@ export class ResourceManager {
   private manifest: ResourceManifest | null = null;
   private cache = new Map<string, CacheEntry>();
   private loadingPromises = new Map<string, Promise<string>>();
+  private missingResourcesLogged = new Set<string>();
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
   private readonly MAX_RETRIES = 3;
 
@@ -66,9 +67,25 @@ export class ResourceManager {
         throw new Error(`Failed to scan GitHub: ${response.status}`);
       }
       
-      const files = await response.json();
+      const text = await response.text();
+      if (!text || text.trim().length === 0) {
+        throw new Error('Empty response from GitHub API');
+      }
       
-      // Создаем виртуальный manifest из GitHub API
+      let files;
+      try {
+        files = JSON.parse(text);
+      } catch (parseError) {
+        console.error('Failed to parse GitHub API response:', parseError);
+        console.error('Response text (first 200 chars):', text.substring(0, 200));
+        throw new Error(`Invalid JSON response from GitHub API: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+      }
+      
+      if (!Array.isArray(files)) {
+        throw new Error(`Expected array from GitHub API, got ${typeof files}`);
+      }
+      
+      // Create virtual manifest from GitHub API
       this.manifest = {
         version: '1.0.0',
         baseUrl: this.cdnBaseUrl,
@@ -78,10 +95,13 @@ export class ResourceManager {
       };
       
       for (const file of files) {
-        if (file.type === 'file' && file.name.endsWith('.svg')) {
+        const isSvg = file.name.endsWith('.svg');
+        const isPng = file.name.endsWith('.png');
+
+        if (file.type === 'file' && (isSvg || isPng)) {
           const id = file.name.replace(/\.[^/.]+$/, '');
           this.manifest.resources['displacement-maps'][id] = {
-            type: 'svg',
+            type: isSvg ? 'svg' : 'png',
             path: `/displacement-maps/svg/${file.name}`,
             hash: file.sha,
             size: file.size,
@@ -91,14 +111,14 @@ export class ResourceManager {
       }
       
       const resourceCount = Object.keys(this.manifest.resources['displacement-maps']).length;
-      console.log(`✅ ResourceManager auto-discovered ${resourceCount} resources from GitHub`);
+      // console.log(`✅ ResourceManager auto-discovered ${resourceCount} resources from GitHub`);
       
       // Preload critical resources
       await this.preloadCriticalResources();
       
     } catch (error) {
       console.warn('⚠️ ResourceManager GitHub scan failed (expected in Figma sandbox):', error instanceof Error ? error.message : String(error));
-      console.log('✅ Using direct URL fallback for resources (sandbox mode)');
+      // console.log('✅ Using direct URL fallback for resources (sandbox mode)');
       // Continue without resources - will use fallbacks
     }
   }
@@ -108,14 +128,18 @@ export class ResourceManager {
    */
   resolveResource(resourceId: string): string | null {
     if (!this.manifest) {
-      // Это нормально в Figma sandbox - используем прямые URL
-      // Fallback: прямое построение URL без manifest
-      // Обрабатываем файлы с пробелами в именах
-      const fileName = resourceId.includes(' ') ? resourceId : `${resourceId}.svg`;
-      if (!fileName.endsWith('.svg')) {
-        return `${this.cdnBaseUrl}/displacement-maps/svg/${fileName}.svg`;
+      // This is normal in Figma sandbox - using direct URLs
+      // Fallback: direct URL construction without manifest
+      // Handle files with spaces in names
+      const fileName = resourceId.includes(' ') ? resourceId : resourceId;
+      
+      // Try to guess extension or use SVG as default
+      if (fileName.endsWith('.svg') || fileName.endsWith('.png')) {
+         return `${this.cdnBaseUrl}/displacement-maps/svg/${fileName}`;
       }
-      return `${this.cdnBaseUrl}/displacement-maps/svg/${fileName}`;
+      
+      // Default to SVG if no extension provided
+      return `${this.cdnBaseUrl}/displacement-maps/svg/${fileName}.svg`;
     }
 
     // Parse resource://category/id or resource://id format
@@ -134,7 +158,15 @@ export class ResourceManager {
 
     const resource = this.manifest.resources[category]?.[id];
     if (!resource) {
-      console.error(`Resource not found: ${resourceId}`);
+      // Use warn instead of error for missing resources (common with custom presets)
+      // Only log once per resource to avoid spam
+      if (!this.missingResourcesLogged?.has(resourceId)) {
+        if (!this.missingResourcesLogged) {
+          this.missingResourcesLogged = new Set();
+        }
+        this.missingResourcesLogged.add(resourceId);
+        console.warn(`Resource not found: ${resourceId} (using fallback)`);
+      }
       return null;
     }
 
@@ -173,7 +205,9 @@ export class ResourceManager {
   private async loadResourceInternal(resourceId: string): Promise<string> {
     const url = this.resolveResource(resourceId);
     if (!url) {
-      throw new Error(`Cannot resolve resource: ${resourceId}`);
+      // Return fallback texture instead of throwing error
+      // This prevents console spam for missing custom preset resources
+      return this.createFallbackTexture();
     }
 
     // Try loading with retries
@@ -198,12 +232,14 @@ export class ResourceManager {
         // Cache the result
         this.cacheResource(resourceId, url, dataUrl);
         
-        console.log(`✅ Loaded resource: ${resourceId}`);
         return dataUrl;
 
       } catch (error) {
         lastError = error as Error;
-        console.warn(`⚠️ Attempt ${attempt + 1} failed for ${resourceId}:`, error);
+        // Only log warnings for retries, not for final failure
+        if (attempt < this.MAX_RETRIES - 1) {
+          // Silent retries - don't spam console
+        }
         
         if (attempt < this.MAX_RETRIES - 1) {
           // Exponential backoff
@@ -212,9 +248,30 @@ export class ResourceManager {
       }
     }
 
-    // All retries failed
-    console.error(`❌ Failed to load resource after ${this.MAX_RETRIES} attempts: ${resourceId}`);
-    throw lastError || new Error(`Failed to load resource: ${resourceId}`);
+    // All retries failed - return fallback instead of throwing
+    // This prevents console spam for missing resources
+    return this.createFallbackTexture();
+  }
+
+  /**
+   * Create a neutral fallback texture when resource loading fails
+   */
+  private createFallbackTexture(): string {
+    const svg = `
+      <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="fallback" patternUnits="userSpaceOnUse" width="10" height="10">
+            <rect width="5" height="5" fill="#808080"/>
+            <rect x="5" y="5" width="5" height="5" fill="#808080"/>
+            <rect x="5" y="0" width="5" height="5" fill="#a0a0a0"/>
+            <rect x="0" y="5" width="5" height="5" fill="#a0a0a0"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#fallback)"/>
+      </svg>
+    `;
+    
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   }
 
   /**
@@ -247,7 +304,6 @@ export class ResourceManager {
     });
 
     await Promise.allSettled(preloadPromises);
-    console.log(`✅ Preloaded ${criticalResources.length} critical resources`);
   }
 
   private getCachedResource(resourceId: string): string | null {

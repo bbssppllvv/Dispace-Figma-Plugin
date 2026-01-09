@@ -19,6 +19,8 @@ export { imageCache } from './StorageService';
 export { licenseService } from './LicenseService';
 export { resourceManager } from './ResourceManager';
 export { presetService } from './PresetService';
+export { customPresetService } from './CustomPresetService';
+export type { CustomPreset } from './CustomPresetService';
 export { createStorageAdapter, LocalStorageAdapter, FigmaStorageAdapter } from './StorageAdapter';
 
 /**
