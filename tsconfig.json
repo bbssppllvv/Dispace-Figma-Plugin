@@ -5,6 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "strict": true,
+    "resolveJsonModule": true,
     "noEmit": true,
     "types": ["vite/client", "@figma/plugin-typings"],
     "skipLibCheck": true

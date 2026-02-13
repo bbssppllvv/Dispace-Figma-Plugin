@@ -6,6 +6,7 @@
  */
 
 import type { Preset, PresetCategory, SampleImage, TooltipData } from '../presets/types';
+import * as bundledManifest from '../../../assets/presets.json';
 
 interface PresetManifest {
   version: string;
@@ -302,9 +303,12 @@ export class PresetService {
   }
 
   private async loadFallbackPresets(): Promise<Preset[]> {
-    // No fallback presets - everything loads from CDN
-    console.warn('No fallback presets available, using empty array');
-    return [];
+    console.warn('CDN unavailable, using bundled presets');
+    const manifest = bundledManifest as PresetManifest;
+    this.categories = this.processCategories(manifest.categories || []);
+    this.sampleImages = (manifest.sampleImages || []).sort((a, b) => a.order - b.order);
+    this.tooltips = manifest.tooltips || [];
+    return this.processPresets(manifest.presets || []);
   }
 
   /**
