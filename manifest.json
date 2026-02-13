@@ -5,17 +5,18 @@
   "main": "dist/code.js",
   "ui": "dist/ui/index.html",
   "editorType": ["figma"],
-  "permissions": [],
+  "permissions": ["currentuser"],
   "networkAccess": { 
     "allowedDomains": [
-      "https://unpkg.com", 
-      "https://rsms.me", 
+      "https://unpkg.com",
+      "https://rsms.me",
       "https://i.ibb.co",
       "https://cdn.tailwindcss.com",
       "https://cdnjs.cloudflare.com",
-        "https://dispace-figma-assets.vercel.app",
-        "https://raw.githubusercontent.com",
-        "https://api.github.com"
+      "https://dispace-figma-assets.vercel.app",
+      "https://raw.githubusercontent.com",
+      "https://api.github.com",
+      "https://api.polar.sh"
     ] 
   }
 } 

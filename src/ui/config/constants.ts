@@ -152,18 +152,24 @@ export const APP_CONFIG = {
   // Storage limits
   STORAGE_LIMIT: 5 * 1024 * 1024, // 5MB
 
-  // License/Pro model settings
+  // License/Pro model settings (Polar.sh)
   LICENSE: {
+    // Polar organization ID (from Polar dashboard)
+    POLAR_ORGANIZATION_ID: '9e21e343-5247-49e6-b85c-e6951340db57',
+
+    // Polar Checkout Link URL
+    POLAR_CHECKOUT_LINK_URL: 'https://buy.polar.sh/polar_cl_zzpp1DotDCsJ9ua4eG6Dav9OleSfUrF6Cxji61JmHRi',
+
     // Dev mode control - set to false for production
     DEV_MODE_ENABLED: true, //Do not edit it! Only manual change by admin!
-    
+
     // Dev mode shortcuts
     DEV_TOGGLE_SHORTCUT: 'Ctrl+L', // or Cmd+L on Mac
-    
+
     // Feature availability (for documentation)
     FREE_FEATURES: [
       'All effects and settings',
-      'Free presets', 
+      'Free presets',
       'Preview and tweak Pro presets',
       'Custom maps'
     ],

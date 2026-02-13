@@ -56,27 +56,74 @@ export class ModalManager implements ModalManagerAPI {
     // Paywall button handlers
     const goProButton = document.getElementById('go-pro-button');
     if (goProButton) {
-      goProButton.addEventListener('click', async () => {
-        // TODO: This is where Stripe integration will happen
-        // 1. The next developer should replace licenseService.upgradeToPro()
-        //    with actual Stripe Checkout session creation
-        // 2. Handle payment success/failure callbacks
-        // 3. Update user's license status after successful payment
-        
+      goProButton.addEventListener('click', () => {
+        // In dev mode, simulate upgrade success
+        if (licenseService.isDevModeEnabled()) {
+          console.log('Dev mode: Simulating upgrade success');
+          licenseService.devSetLicense('pro');
+          const paywallOverlay = document.getElementById('paywall-overlay');
+          paywallOverlay?.classList.add('hidden');
+          return;
+        }
+
+        // Open Polar Checkout in external browser
+        licenseService.openCheckout();
+      });
+    }
+
+    // Activate license key button handler
+    const activateKeyButton = document.getElementById('activate-key-button');
+    const licenseKeyInput = document.getElementById('license-key-input') as HTMLInputElement | null;
+    if (activateKeyButton && licenseKeyInput) {
+      activateKeyButton.addEventListener('click', async () => {
+        const key = licenseKeyInput.value;
+        if (!key.trim()) {
+          alert('Please enter a license key.');
+          return;
+        }
+
+        activateKeyButton.setAttribute('disabled', 'true');
+        const originalText = activateKeyButton.textContent;
+        activateKeyButton.textContent = 'Activating...';
+
         try {
-          await licenseService.upgradeToPro();
-          
-          // TODO: Remove this dev simulation when Stripe is integrated
-          if (licenseService.isDevModeEnabled()) {
-            console.log('🧪 Dev mode: Simulating upgrade success');
-            licenseService.devSetLicense('pro');
+          await licenseService.activateLicenseKey(key);
+          licenseKeyInput.value = '';
+
+          // Show success state in the right panel
+          const rightPanel = document.querySelector('#paywall-overlay .modal-panel-right') as HTMLElement | null;
+          if (rightPanel) {
+            const originalContent = rightPanel.innerHTML;
+            rightPanel.innerHTML = `
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;text-align:center;">
+                <div style="font-size:36px;line-height:1;">&#10003;</div>
+                <div class="text-heading">Pro Activated</div>
+                <div class="text-body" style="color:var(--color-text-secondary);">You're all set.</div>
+              </div>
+            `;
+            setTimeout(() => {
+              const paywallOverlay = document.getElementById('paywall-overlay');
+              paywallOverlay?.classList.add('hidden');
+              rightPanel.innerHTML = originalContent;
+            }, 1800);
+          } else {
+            const paywallOverlay = document.getElementById('paywall-overlay');
+            paywallOverlay?.classList.add('hidden');
           }
         } catch (error) {
-          console.error('Upgrade failed:', error);
-          // TODO: Add proper error handling for Stripe failures
-          // - Network errors
-          // - Payment declined
-          // - User cancellation
+          console.error('Activation failed:', error);
+          const message = error instanceof Error ? error.message : 'Invalid key. Check and try again.';
+          alert(message);
+        } finally {
+          activateKeyButton.removeAttribute('disabled');
+          activateKeyButton.textContent = originalText;
+        }
+      });
+
+      // Allow Enter key to activate
+      licenseKeyInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          activateKeyButton.click();
         }
       });
     }

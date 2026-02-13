@@ -1,0 +1,44 @@
+# Discounts
+
+> Create discounts on products and subscriptions
+
+Discounts are a way to reduce the price of a product or subscription. They can be applied to one-time purchasable products or subscriptions.
+
+## Create a Discount
+
+Go to the **Products** page and click on the **Discounts** tab.
+
+### Name
+
+Displayed to the customer when they apply the discount.
+
+### Code
+
+Optional code (case insensitive) that the customer can use to apply the discount. If left empty, the discount can only be applied through a Checkout Link or the API.
+
+### Percentage Discount
+
+The percentage discount to apply to the product or subscription.
+
+### Fixed Amount Discount
+
+The discount deducts a fixed amount from the price of the product or subscription.
+
+### Recurring Discount
+
+How the discount is applied to recurring products:
+
+* **Once** - The discount is applied once.
+* **Several Months** - The discount is applied for a fixed number of months.
+* **Forever** - The discount is applied indefinitely.
+
+### Restrictions
+
+* **Products** - The discount can only be applied to specific products. By default the discount can be applied to all products, also ones created after the discount was created.
+* **Starts at** - The discount can only be applied after this date.
+* **Ends at** - The discount can only be applied before this date.
+* **Maximum redemptions** - The maximum number of times the discount can be applied.
+
+## Apply a Discount
+
+Discounts can be applied to a Checkout Link or a Checkout Session.

@@ -6,6 +6,7 @@
  */
 
 import { figmaService } from '../services/FigmaService';
+import { licenseService } from '../services/LicenseService';
 import { uiManager } from './UIManager';
 import type { ImageSessionManager } from './ImageSessionManager';
 
@@ -27,6 +28,22 @@ export class FigmaMessageHandler {
    * Initialize all message handlers
    */
   init(): void {
+    // User context handler (for license validation)
+    const unsubscribeUserContext = figmaService.onMessage('USER_CONTEXT', (message) => {
+      console.log('[DEBUG] FigmaMessageHandler: USER_CONTEXT received');
+      const { userId, userName } = message as { userId: string | null; userName: string | null };
+      licenseService.setUserId(userId);
+    });
+    this.unsubscribeHandlers.push(unsubscribeUserContext);
+
+    // License key loaded from clientStorage handler
+    const unsubscribeLicenseKey = figmaService.onMessage('LICENSE_KEY_LOADED', (message) => {
+      console.log('[DEBUG] FigmaMessageHandler: LICENSE_KEY_LOADED received');
+      const { key, activationId } = message as { key: string | null; activationId: string | null };
+      licenseService.onLicenseKeyLoaded(key, activationId);
+    });
+    this.unsubscribeHandlers.push(unsubscribeLicenseKey);
+
     // Selection update handler
     const unsubscribeSelection = figmaService.onMessage('selection-updated', async (message) => {
       console.log('[DEBUG] FigmaMessageHandler: selection-updated received', 'bytes length:', message.imageBytes ? message.imageBytes.length : 0);
@@ -60,13 +77,13 @@ export class FigmaMessageHandler {
 
     // Unsupported nodes handler
     const unsubscribeUnsupported = figmaService.onMessage('unsupported-node', (message) => {
-      let reason = "This layer is not supported.";
+      let reason = "Layer not supported. Select an image layer.";
       if (message.reason === 'multiple') {
-        reason = "Please select a single layer.";
+        reason = "Select a single layer.";
       } else if (message.reason === 'vector') {
-        reason = "Please select a layer with an image fill, not a vector.";
+        reason = "Vectors are not supported. Select a layer with an image fill.";
       } else if (message.reason === 'no-image-fill') {
-        reason = "The selected layer does not have an image fill.";
+        reason = "No image fill found. Select a layer with an image.";
       }
       this.deps.sessionManager.clearSession(reason, 'error');
     });

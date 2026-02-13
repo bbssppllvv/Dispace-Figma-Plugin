@@ -47,4 +47,6 @@ export interface FigmaMessageHandlers {
   'apply-success': (msg: void) => void;
   'apply-error': (msg: { error: string }) => void;
   'custom-presets-loaded': (msg: { presets: CustomPreset[] }) => void;
+  'USER_CONTEXT': (msg: { userId: string | null; userName: string | null }) => void;
+  'LICENSE_KEY_LOADED': (msg: { key: string | null; activationId: string | null }) => void;
 } 

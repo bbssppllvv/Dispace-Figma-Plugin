@@ -6,6 +6,52 @@ import { withErrorHandling, formatImageError } from './utils';
 import { processSelectedImage, getSelectedNode, createNewImageRectangle, modifyNodeWithImage, duplicateNodeWithImage, ChainState } from './selection';
 
 /**
+ * Send user context to UI (Figma User ID for license validation)
+ */
+export function sendUserContext(): void {
+  // Note: Using explicit null checks instead of optional chaining for plugin sandbox compatibility
+  const currentUser = figma.currentUser;
+  const userId = currentUser && currentUser.id ? currentUser.id : null;
+  const userName = currentUser && currentUser.name ? currentUser.name : null;
+
+  figma.ui.postMessage({
+    type: 'USER_CONTEXT',
+    userId,
+    userName,
+  });
+
+  console.log('[DEBUG] Sent USER_CONTEXT to UI:', { userId: userId ? `${userId.substring(0, 8)}...` : null });
+
+  // Also load and send stored license key to UI
+  loadAndSendLicenseKey();
+}
+
+/**
+ * Load license key from clientStorage and send to UI
+ */
+async function loadAndSendLicenseKey(): Promise<void> {
+  try {
+    const key = await figma.clientStorage.getAsync('polar_license_key') || null;
+    const activationId = await figma.clientStorage.getAsync('polar_activation_id') || null;
+
+    figma.ui.postMessage({
+      type: 'LICENSE_KEY_LOADED',
+      key,
+      activationId,
+    });
+
+    console.log('[DEBUG] Sent LICENSE_KEY_LOADED to UI:', { hasKey: !!key, hasActivationId: !!activationId });
+  } catch (error) {
+    console.error('Error loading license key:', error);
+    figma.ui.postMessage({
+      type: 'LICENSE_KEY_LOADED',
+      key: null,
+      activationId: null,
+    });
+  }
+}
+
+/**
  * Load and send custom presets to UI
  */
 export async function loadAndSendCustomPresets(): Promise<void> {
@@ -46,6 +92,8 @@ export function createMessageHandlers() {
     // UI handshake: when UI is ready, (re)send current selection and presets
     'ui-ready': withErrorHandling(async () => {
       console.log('[DEBUG] ui-ready message received from UI');
+      // Send user context for license validation
+      sendUserContext();
       // Ensure presets are available in UI (in case initial send happened before UI listeners attached)
       await loadAndSendCustomPresets();
       // Send current selection state
@@ -120,6 +168,51 @@ export function createMessageHandlers() {
           percentage: (totalSize / totalLimit) * 100
         }
       });
+    }),
+
+    // Store license key in clientStorage (for Polar license keys)
+    'STORE_LICENSE_KEY': withErrorHandling(async (msg) => {
+      const { key, activationId } = msg;
+      await figma.clientStorage.setAsync('polar_license_key', key);
+      await figma.clientStorage.setAsync('polar_activation_id', activationId);
+      console.log('[STORE_LICENSE_KEY] License key stored');
+    }),
+
+    // Clear license key from clientStorage
+    'CLEAR_LICENSE_KEY': withErrorHandling(async () => {
+      await figma.clientStorage.deleteAsync('polar_license_key');
+      await figma.clientStorage.deleteAsync('polar_activation_id');
+      console.log('[CLEAR_LICENSE_KEY] License key cleared');
+    }),
+
+    // Load license key from clientStorage and send to UI
+    'LOAD_LICENSE_KEY': withErrorHandling(async () => {
+      const key = await figma.clientStorage.getAsync('polar_license_key') || null;
+      const activationId = await figma.clientStorage.getAsync('polar_activation_id') || null;
+      figma.ui.postMessage({
+        type: 'LICENSE_KEY_LOADED',
+        key,
+        activationId,
+      });
+      console.log('[LOAD_LICENSE_KEY] License key sent to UI:', { hasKey: !!key });
+    }),
+
+    // Open external URL (for Polar Checkout)
+    'OPEN_EXTERNAL': withErrorHandling(async (msg) => {
+      const { url } = msg;
+      if (!url || typeof url !== 'string') {
+        console.error('[OPEN_EXTERNAL] Invalid URL:', url);
+        return;
+      }
+      
+      // Security: Only allow https URLs
+      if (!url.startsWith('https://')) {
+        console.error('[OPEN_EXTERNAL] Blocked non-HTTPS URL:', url);
+        return;
+      }
+      
+      console.log('[OPEN_EXTERNAL] Opening:', url);
+      figma.openExternal(url);
     })
   };
 }

@@ -1,6 +1,6 @@
 {
-  "outputDirectory": "public",
   "buildCommand": "mkdir -p public && cp -r displacement-maps presets.json public/",
+  "outputDirectory": "public",
   "headers": [
     {
       "source": "/(.*)",

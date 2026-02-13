@@ -1,0 +1,92 @@
+# Products
+
+> Create digital products on Polar in minutes
+
+> **Everything is a product.** Subscriptions or pay once products are both considered a product in Polar (API & data model). Just with different pricing & billing logic. So both are shown & managed under Products with the ability to filter based on pricing model.
+
+## Create a Product
+
+### Name & Description
+
+* **Name** - The title of your product.
+* **Description** - Markdown is supported here too.
+
+### Pricing
+
+Determine how you want to charge your customers for this product.
+
+1. **Billing cycle**
+   * **One-time purchase** - Customer is charged once and gets access to the product forever.
+   * **Monthly** - Customer is charged every month.
+   * **Yearly** - Customer is charged every year.
+
+2. **Pricing type**
+   * **Fixed price** - Set a fixed price for the product.
+   * **Pay what you want** - Let customers decide how much they want to pay.
+   * **Free** - No charge for the product.
+
+3. **Price** - For fixed price products, set the amount you want to charge. For pay what you want products, you can set a minimum amount and a default amount that will be preset on checkout.
+
+> Billing cycle and pricing type cannot be changed after the product is created.
+
+> **What if I want both a monthly and yearly pricing?** Polar has a unique approach to what the industry typically calls **variants**. Each product has a single pricing model, but you can create multiple products with different pricing models, and showcase them both at checkout.
+
+### Trial Period
+
+For recurring products, you can set a trial period during which the customer won't be charged. Toggle **Enable trial period** to enable it. Then, you'll be able to set the duration of the trial period, given a number and a unit (days, weeks, months or years).
+
+### Product Media
+
+* You can upload public product images to be displayed on product pages
+* They can be up to 10MB each
+* You can remove and re-arrange images
+
+### Checkout Fields
+
+You can collect additional information from your customers at checkout. This can be useful for things like phone number, terms of service agreement or specific data you need to collect.
+
+Fields are managed from your organization settings, and you can choose which fields to show on a per-product basis, and set if they are required or not. Supported field types:
+
+* Text
+* Number
+* Date
+* Checkbox
+* Select
+
+> If you make a checkbox **required**, the customer will need to check it before confirming their purchase. Very handy for legal terms!
+
+The data collected will be available in the order and subscription details.
+
+### Automated Entitlements
+
+Finally, you can enable or create new entitlements (what we call Benefits) that you tie to the product:
+
+* License Keys
+* Discord Server Role
+* GitHub Repository Access
+* File Downloads
+* Custom Benefit
+
+## Variants
+
+Polar has a unique approach regarding what the industry typically calls **variants**.
+
+We believe having a single product with multiple pricing models and benefits adds unnecessary complexity to the user and to the API. Instead, we chose to treat everything as a product, giving you maximum flexibility about the pricing and benefits you want to offer.
+
+You can showcase several products at checkout, allowing the customer to switch between them. Typically, you can offer a monthly and a yearly product, with specific pricing and benefits for each.
+
+## Update a Product
+
+You can edit any product details, except the **billing cycle** and **pricing type**.
+
+For fixed price products, you can change the price. Existing subscribers will remain on their current pricing.
+
+If you add benefits, existing subscribers will get them automatically. If you remove benefits, existing subscribers will lose access to them.
+
+## Archive a Product
+
+Products on Polar can't be deleted, but they can be **archived**. You can do so by clicking the **Archive** button on the bottom right of the product page.
+
+Existing customers will keep their access to the product, and subscriptions will continue to renew. However, the product will no longer be available for new purchases.
+
+It's possible to unarchive a product using the Products Update API.

@@ -1,472 +1,102 @@
-# Displace Plugin — Руководство по монетизации
+# Displace Plugin — Monetization Guide
 
-> Документ для специалиста по интеграции платежной системы
+> Polar.sh License Key integration
 
-## Оглавление
+## Overview
 
-1. [Обзор текущей системы](#обзор-текущей-системы)
-2. [Архитектура лицензирования](#архитектура-лицензирования)
-3. [Что уже реализовано](#что-уже-реализовано)
-4. [Что нужно реализовать](#что-нужно-реализовать)
-5. [Точки интеграции](#точки-интеграции)
-6. [Free vs Pro функционал](#free-vs-pro-функционал)
-7. [Технические детали](#технические-детали)
-8. [Рекомендации по интеграции](#рекомендации-по-интеграции)
+Displace uses **Polar.sh License Keys** for monetization. The architecture is entirely client-side — no backend server, no Stripe, no Supabase. Polar's public API handles license activation and validation directly from the Figma plugin UI iframe.
 
----
-
-## Обзор текущей системы
-
-Плагин Displace — это Figma-плагин для создания displacement-эффектов на изображениях. Система монетизации уже **архитектурно подготовлена**, но требует интеграции реальной платежной системы.
-
-### Текущий статус
-
-| Компонент | Статус | Описание |
-|-----------|--------|----------|
-| Модель Free/Pro | ✅ Готова | Два состояния лицензии: `free` и `pro` |
-| Premium-пресеты | ✅ Готова | Пресеты могут быть отмечены как `premium: true` |
-| UI блокировки | ✅ Готов | PRO-бейджи, paywall-модал, кнопка Upgrade |
-| Paywall UI | ✅ Готов | Модальное окно с информацией о Pro |
-| Export Code | ✅ Готов | Заблокирован для Free-пользователей |
-| Платежная система | ❌ Не реализована | Требуется интеграция Stripe/Gumroad/etc |
-| Серверная валидация | ❌ Не реализована | Требуется бэкенд для проверки лицензий |
-
----
-
-## Архитектура лицензирования
-
-### Главный файл: `src/ui/services/LicenseService.ts`
-
-```typescript
-// Два состояния лицензии
-type LicenseState = 'free' | 'pro';
-
-// Основной сервис
-class LicenseService {
-  isPro(): boolean;           // Проверка Pro-статуса
-  isFree(): boolean;          // Проверка Free-статуса
-  canAccessPreset(preset): boolean;  // Может ли юзер использовать пресет
-  canApplyPreset(preset): boolean;   // Может ли применить пресет
-  canExportCode(): boolean;   // Может ли экспортировать код
-  upgradeToPro(): Promise<void>;     // ← ЗДЕСЬ НУЖНА ИНТЕГРАЦИЯ
-}
-```
-
-### Схема работы
+### Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FIGMA PLUGIN                              │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                     LicenseService                         │  │
-│  │  ┌─────────────┐    ┌──────────────┐    ┌──────────────┐  │  │
-│  │  │ Free State  │ ←→ │ State Manager │ ←→ │  Pro State   │  │  │
-│  │  └─────────────┘    └──────────────┘    └──────────────┘  │  │
-│  │         │                   │                   │          │  │
-│  │         ▼                   ▼                   ▼          │  │
-│  │  ┌─────────────────────────────────────────────────────┐  │  │
-│  │  │              upgradeToPro() → TODO: Stripe          │  │  │
-│  │  └─────────────────────────────────────────────────────┘  │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              │                                   │
-│                              ▼                                   │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                     UI COMPONENTS                          │  │
-│  │   • PRO badges on presets                                  │  │
-│  │   • Paywall modal                                          │  │
-│  │   • Upgrade button                                         │  │
-│  │   • Copy Code modal (Free/Pro variants)                    │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼ (TODO)
-┌─────────────────────────────────────────────────────────────────┐
-│                      BACKEND SERVER                              │
-│   • Stripe Checkout session                                      │
-│   • License validation API                                       │
-│   • Webhook handling                                             │
-└─────────────────────────────────────────────────────────────────┘
+PURCHASE:
+  Plugin UI → figma.openExternal(checkoutLinkUrl) → Polar Checkout → payment → license key on success page
+
+ACTIVATION:
+  User copies key → enters in plugin → UI calls POST api.polar.sh/v1/customer-portal/license-keys/activate
+  → receives activation_id → sends (key + activation_id) to code.ts → figma.clientStorage
+
+VALIDATION (on every plugin open):
+  code.ts → figma.clientStorage.getAsync → sends key + activation_id to UI
+  → UI calls POST api.polar.sh/v1/customer-portal/license-keys/validate
+  → isPro = true/false → notifyListeners()
 ```
 
 ---
 
-## Что уже реализовано
+## Key Files
 
-### 1. LicenseService (`src/ui/services/LicenseService.ts`)
-
-**Полностью работающий сервис управления лицензией:**
-
-```typescript
-// Публичные методы - ВСЕ РАБОТАЮТ
-isPro(): boolean              // true если пользователь Pro
-isFree(): boolean             // true если пользователь Free
-getState(): LicenseState      // 'free' | 'pro'
-canAccessPreset(preset)       // Проверка доступа к пресету
-canApplyPreset(preset)        // Проверка возможности применить пресет
-canExportCode(): boolean      // true только для Pro
-
-// Система подписки на изменения - РАБОТАЕТ
-onStateChange(listener)       // Подписка на изменение статуса
-```
-
-### 2. Premium-пресеты (`assets/presets.json`)
-
-Пресеты загружаются с CDN и могут содержать флаг `premium`:
-
-```json
-{
-  "id": "new-preset-1",
-  "name": "Vertical llllll",
-  "premium": true,  // ← Этот флаг делает пресет Pro-only
-  "categories": ["vertical", "popular"],
-  "defaultScale": 50,
-  "defaultStrength": 150,
-  "layers": [...]
-}
-```
-
-### 3. UI компоненты
-
-#### PRO Badge на пресетах (`src/ui/components/gallery/PresetGalleryView.ts`)
-```typescript
-// Автоматически показывает PRO-бейдж для премиум-пресетов
-const shouldShow = preset.premium && !licenseService.isPro();
-if (shouldShow && !existingBadge) {
-  const proBadge = createElement('div', { className: 'preset-pro-badge', textContent: 'PRO' });
-  presetElement.appendChild(proBadge);
-}
-```
-
-#### Paywall Modal (`src/ui/components/paywall.html`)
-```html
-<div id="paywall-overlay" class="hidden paywall-modal overlay-fixed">
-  <!-- Левая панель - превью -->
-  <!-- Правая панель - информация о Pro -->
-  <button id="go-pro-button" class="btn btn-primary w-full">
-    Get Pro Access  <!-- ← Эта кнопка запускает апгрейд -->
-  </button>
-</div>
-```
-
-#### Copy Code Modal — две версии:
-- `copycode.html` — для Pro пользователей (полный код)
-- `copycode-free.html` — для Free пользователей (размытый код + кнопка Upgrade)
-
-### 4. Кнопка Upgrade в UI (`src/ui/index.html`)
-```html
-<button id="upgradeToPro" class="btn btn-primary" style="display: none;">
-  Upgrade to Pro
-</button>
-```
-
-Кнопка автоматически показывается когда:
-- Выбран Premium-пресет
-- Пользователь на Free-плане
-
-### 5. Конфигурация (`src/ui/config/constants.ts`)
-
-```typescript
-LICENSE: {
-  DEV_MODE_ENABLED: true,  // Включить false для продакшена!
-  
-  FREE_FEATURES: [
-    'All effects and settings',
-    'Free presets', 
-    'Preview and tweak Pro presets',
-    'Custom maps'
-  ],
-  PRO_FEATURES: [
-    'Apply Pro presets to canvas',
-    'Export to Code (always Pro-only)',
-    'Premium preset library'
-  ]
-}
-```
-
-### 6. Dev Mode для тестирования
-
-В режиме разработки (`DEV_MODE_ENABLED: true`) доступна кнопка переключения Free/Pro в левом верхнем углу плагина.
+| File | Purpose |
+|------|---------|
+| `src/ui/services/LicenseService.ts` | Core license logic (Polar API calls) |
+| `src/ui/config/constants.ts` | `LICENSE.POLAR_ORGANIZATION_ID`, `LICENSE.POLAR_CHECKOUT_LINK_URL` |
+| `src/code/handlers.ts` | `STORE_LICENSE_KEY`, `CLEAR_LICENSE_KEY`, `LOAD_LICENSE_KEY` handlers |
+| `src/ui/managers/FigmaMessageHandler.ts` | `LICENSE_KEY_LOADED` handler |
+| `src/ui/components/paywall.html` | Paywall modal with license key input |
+| `src/ui/managers/ModalManager.ts` | Button handlers for checkout + activation |
+| `manifest.json` | `api.polar.sh` in `networkAccess.allowedDomains` |
 
 ---
 
-## Что нужно реализовать
-
-### Основная задача: интеграция платежной системы
-
-#### Место интеграции: `LicenseService.upgradeToPro()`
+## Polar API Endpoints (Public, No Auth)
 
 ```typescript
-// src/ui/services/LicenseService.ts (строки 80-99)
+// Activate
+POST https://api.polar.sh/v1/customer-portal/license-keys/activate
+Body: { key, organization_id, label }
+→ Returns: { id: activationId, ... }
 
-async upgradeToPro(): Promise<void> {
-  // TODO: Integrate with Stripe Checkout
-  // 1. Create Stripe checkout session with user/plugin info
-  // 2. Redirect to Stripe or open popup
-  // 3. Handle success webhook on server
-  // 4. Update user license status on server
-  // 5. Refresh local license state
-  
-  console.log('🚀 Upgrade to Pro flow - TODO: Implement Stripe integration');
-  
-  // TODO: Remove this dev simulation when Stripe is integrated
-  if (this.isDevMode) {
-    console.log('🧪 Dev mode: Simulating Stripe success');
-    return Promise.resolve();
-  }
-  
-  // TODO: Replace with actual Stripe integration
-  throw new Error('Stripe integration not implemented yet');
-}
-```
+// Validate
+POST https://api.polar.sh/v1/customer-portal/license-keys/validate
+Body: { key, organization_id, activation_id }
+→ Returns: { valid: true/false, ... }
 
-#### Место интеграции: `LicenseService.validateLicenseWithServer()`
-
-```typescript
-// src/ui/services/LicenseService.ts (строки 105-114)
-
-async validateLicenseWithServer(): Promise<boolean> {
-  // TODO: Implement server-side license validation
-  // 1. Get user ID or session token
-  // 2. Call backend API to check subscription status
-  // 3. Handle expired/cancelled subscriptions
-  // 4. Update local state accordingly
-  
-  console.log('🔄 License validation - TODO: Implement server check');
-  return this.isPro(); // Temporary fallback
-}
-```
-
-#### Место интеграции: Handler кнопки Go Pro
-
-```typescript
-// src/ui/managers/ModalManager.ts (строки 57-82)
-
-goProButton.addEventListener('click', async () => {
-  // TODO: This is where Stripe integration will happen
-  // 1. The next developer should replace licenseService.upgradeToPro()
-  //    with actual Stripe Checkout session creation
-  // 2. Handle payment success/failure callbacks
-  // 3. Update user's license status after successful payment
-  
-  try {
-    await licenseService.upgradeToPro();
-    
-    // TODO: Remove this dev simulation when Stripe is integrated
-    if (licenseService.isDevModeEnabled()) {
-      console.log('🧪 Dev mode: Simulating upgrade success');
-      licenseService.devSetLicense('pro');
-    }
-  } catch (error) {
-    console.error('Upgrade failed:', error);
-    // TODO: Add proper error handling for Stripe failures
-  }
-});
+// Deactivate
+POST https://api.polar.sh/v1/customer-portal/license-keys/deactivate
+Body: { key, organization_id, activation_id }
 ```
 
 ---
 
-## Точки интеграции
+## Free vs Pro Features
 
-### Файлы, которые нужно модифицировать:
+### FREE users:
+- All effects and settings (strength, scale, blur, etc.)
+- Free presets
+- Preview and tweak Pro presets (sliders work)
+- Custom displacement maps
 
-| Файл | Что делать |
-|------|------------|
-| `src/ui/services/LicenseService.ts` | Добавить реальную логику оплаты |
-| `src/ui/managers/ModalManager.ts` | Обработать успех/ошибку платежа |
-| `src/ui/config/constants.ts` | Установить `DEV_MODE_ENABLED: false` |
-
-### Возможные варианты интеграции:
-
-#### Вариант 1: Stripe Checkout (Рекомендуется)
-
-```typescript
-async upgradeToPro(): Promise<void> {
-  // Создать checkout session на сервере
-  const response = await fetch('https://your-server.com/api/create-checkout', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      figmaUserId: await this.getFigmaUserId(),
-      returnUrl: 'figma://...'
-    })
-  });
-  
-  const { checkoutUrl } = await response.json();
-  
-  // Открыть Stripe Checkout
-  window.open(checkoutUrl, '_blank');
-}
-```
-
-#### Вариант 2: License Keys (Gumroad, LemonSqueezy)
-
-```typescript
-async activateLicenseKey(key: string): Promise<boolean> {
-  const response = await fetch('https://your-server.com/api/validate-key', {
-    method: 'POST',
-    body: JSON.stringify({ key, figmaUserId: await this.getFigmaUserId() })
-  });
-  
-  if (response.ok) {
-    this.currentState = 'pro';
-    this.saveState();
-    this.notifyListeners();
-    return true;
-  }
-  return false;
-}
-```
+### PRO users:
+- Everything above
+- Apply Pro presets to canvas
+- Export to Code (SVG)
+- Full premium preset library
 
 ---
 
-## Free vs Pro функционал
+## Setup Checklist
 
-### FREE пользователи могут:
-- ✅ Использовать все эффекты и настройки (strength, scale, blur, etc.)
-- ✅ Использовать бесплатные пресеты
-- ✅ **Просматривать** PRO-пресеты в галерее (видят превью)
-- ✅ **Настраивать** PRO-пресеты (крутить слайдеры)
-- ✅ Загружать свои displacement-карты
-- ❌ **Применять** PRO-пресеты к канвасу
-- ❌ Экспортировать код (Copy Code)
-
-### PRO пользователи могут:
-- ✅ Всё, что могут FREE
-- ✅ Применять PRO-пресеты к канвасу
-- ✅ Экспортировать SVG-код эффектов
-
-### Логика блокировки в коде:
-
-```typescript
-// src/ui/App.ts
-
-// При нажатии Apply:
-private async onApply() {
-  const selectedPreset = appStore.selectedPreset;
-  if (selectedPreset && !licenseService.canApplyPreset(selectedPreset)) {
-    return; // Блок! Показывается кнопка Upgrade вместо Apply
-  }
-  // ... применение эффекта
-}
-
-// При нажатии Copy Code:
-private async onCopyCode() {
-  if (!licenseService.canExportCode()) {
-    this.modalManager.showCopyCodeFreeModal(); // Показать paywall
-    return;
-  }
-  // ... экспорт кода
-}
-```
+1. Create a Polar.sh account and organization
+2. Create a product: "Displace Pro — Lifetime Access" ($19, one-time)
+3. Attach a License Key benefit (prefix: `DISPLACE_`, activation limit: 3)
+4. Create a Checkout Link for the product
+5. Update `src/ui/config/constants.ts`:
+   - Set `POLAR_ORGANIZATION_ID` to your org ID
+   - Set `POLAR_CHECKOUT_LINK_URL` to your checkout link URL
+6. Set `DEV_MODE_ENABLED: false` for production
+7. Build and publish the plugin
 
 ---
 
-## Технические детали
+## Dev Mode
 
-### Хранение состояния
-
-Сейчас состояние хранится локально через `StorageAdapter`:
-- В браузере: `localStorage`
-- В Figma sandbox: не работает (fallback на memory)
-
-**Для продакшена нужно:**
-- Хранить состояние на сервере
-- Привязывать к Figma User ID или email
-- Синхронизировать между устройствами
-
-### Получение Figma User ID
-
-```typescript
-// В plugin code (code.ts):
-const userId = figma.currentUser?.id;
-const userEmail = figma.currentUser?.email; // может быть null
-const userName = figma.currentUser?.name;
-```
-
-**Важно:** `figma.currentUser` доступен только в plugin code, не в UI.
-
-### Уведомление UI об изменениях
-
-Система подписок работает:
-
-```typescript
-// Подписка на изменение лицензии
-licenseService.onStateChange((state) => {
-  // state: 'free' | 'pro'
-  console.log('License changed to:', state);
-  // UI автоматически обновится
-});
-```
-
-При изменении статуса лицензии автоматически:
-- Обновляются PRO-бейджи на пресетах
-- Переключается кнопка Apply/Upgrade
-- Обновляется доступ к Copy Code
+When `DEV_MODE_ENABLED: true` in constants:
+- Ctrl+L (Cmd+L on Mac) toggles Free/Pro state
+- "Get Pro" button simulates checkout instead of opening Polar
+- No API calls are made
 
 ---
 
-## Рекомендации по интеграции
-
-### 1. Выбор платежной системы
-
-| Система | Плюсы | Минусы |
-|---------|-------|--------|
-| **Stripe** | Мощный, гибкий, лучший UX | Требует бэкенд |
-| **Gumroad** | Простой, без бэкенда | Высокие комиссии |
-| **LemonSqueezy** | Простой, без бэкенда | Меньше контроля |
-| **Paddle** | Налоги автоматически | Меньше гибкости |
-
-### 2. Модель монетизации
-
-**Разовая покупка (Lifetime):**
-- Проще реализовать
-- Один раз купил — навсегда
-- Лицензионный ключ
-
-**Подписка (Subscription):**
-- Регулярный доход
-- Требует проверки статуса
-- Сложнее техничически
-
-### 3. Необходимый бэкенд
-
-Минимальные endpoints:
-
-```
-POST /api/create-checkout
-  → Создать Stripe Checkout session
-
-POST /api/validate-license
-  → Проверить статус лицензии по Figma User ID
-
-POST /api/webhook/stripe
-  → Обработать webhook от Stripe
-```
-
-### 4. Безопасность
-
-- **Не доверять клиенту!** Всегда проверять лицензию на сервере
-- Хранить API ключи только на сервере
-- Использовать signed webhooks от Stripe
-
-### 5. Чек-лист перед запуском
-
-- [ ] Интегрировать платежную систему
-- [ ] Создать бэкенд для валидации
-- [ ] Установить `DEV_MODE_ENABLED: false`
-- [ ] Протестировать весь flow покупки
-- [ ] Добавить обработку ошибок платежей
-- [ ] Настроить email-уведомления
-- [ ] Проверить работу на Free и Pro аккаунтах
-
----
-
-## Контакты для вопросов
-
-При возникновении вопросов по коду обращайтесь к разработчику плагина.
-
----
-
-*Документ создан: Январь 2026*
-*Версия плагина: 2.0*
-
+*Document updated: February 2026*
+*Version: 2.0*
+*Payment system: Polar.sh License Keys*
